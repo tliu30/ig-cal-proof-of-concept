@@ -17,7 +17,7 @@ See `README.md` for full requirements.
 - **Concurrency:** Structured concurrency (async/await, actors)
 - **OCR:** Apple Vision framework (`VNRecognizeTextRequest`)
 - **WebView:** WKWebView via `UIViewRepresentable` wrapper
-- **Min Target:** iOS 17.0
+- **Min Target:** iOS 18.6
 
 ## Project Structure
 
@@ -56,8 +56,8 @@ xcodebuild -scheme MyFirstiOSApp -project MyFirstiOSApp.xcodeproj \
 # List available simulators
 xcrun simctl list devices available
 
-# Boot a simulator
-xcrun simctl boot "iPhone 16"
+# Boot a simulator (use iPhone 17 Pro — matches our physical test device)
+xcrun simctl boot "iPhone 17 Pro"
 
 # Install and launch
 xcrun simctl install booted build/Build/Products/Debug-iphonesimulator/MyFirstiOSApp.app
@@ -78,6 +78,16 @@ xcodebuild -scheme MyFirstiOSApp -sdk iphoneos \
 ```
 
 Requires Apple Developer account and valid provisioning profile.
+
+### Running Tests
+
+```bash
+xcodebuild test -scheme MyFirstiOSApp -project MyFirstiOSApp.xcodeproj \
+  -sdk iphonesimulator \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
+```
+
+Always use **iPhone 17 Pro** as the simulator destination — it matches our physical test device.
 
 ### TestFlight
 

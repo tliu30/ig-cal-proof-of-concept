@@ -23,6 +23,11 @@
 		A100000011 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000011 /* Constants.swift */; };
 		A100000012 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B100000012 /* Assets.xcassets */; };
 		A100000013 /* HTMLParsingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000014 /* HTMLParsingService.swift */; };
+		A100000014 /* ExtractedEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000015 /* ExtractedEvent.swift */; };
+		A100000015 /* EventExtractionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000016 /* EventExtractionService.swift */; };
+		A100000016 /* event-flyer-ocr.txt in Resources */ = {isa = PBXBuildFile; fileRef = B100000017 /* event-flyer-ocr.txt */; };
+		A100000017 /* event-single-ocr.txt in Resources */ = {isa = PBXBuildFile; fileRef = B100000018 /* event-single-ocr.txt */; };
+		A100000018 /* event-single-caption.txt in Resources */ = {isa = PBXBuildFile; fileRef = B100000019 /* event-single-caption.txt */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -52,6 +57,11 @@
 		B100000012 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B100000013 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B100000014 /* HTMLParsingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTMLParsingService.swift; sourceTree = "<group>"; };
+		B100000015 /* ExtractedEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtractedEvent.swift; sourceTree = "<group>"; };
+		B100000016 /* EventExtractionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventExtractionService.swift; sourceTree = "<group>"; };
+		B100000017 /* event-flyer-ocr.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "event-flyer-ocr.txt"; sourceTree = "<group>"; };
+		B100000018 /* event-single-ocr.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "event-single-ocr.txt"; sourceTree = "<group>"; };
+		B100000019 /* event-single-caption.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "event-single-caption.txt"; sourceTree = "<group>"; };
 		C100000001 /* MyFirstiOSApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MyFirstiOSApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -90,6 +100,9 @@
 			isa = PBXGroup;
 			children = (
 				40297B202F736A3B004C8C60 /* dump.html */,
+				B100000017 /* event-flyer-ocr.txt */,
+				B100000018 /* event-single-ocr.txt */,
+				B100000019 /* event-single-caption.txt */,
 			);
 			path = "test-data";
 			sourceTree = "<group>";
@@ -132,6 +145,7 @@
 			children = (
 				B100000003 /* Post.swift */,
 				B100000004 /* OCRResult.swift */,
+				B100000015 /* ExtractedEvent.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -169,6 +183,7 @@
 				B100000009 /* OCRService.swift */,
 				B100000010 /* InstagramWebView.swift */,
 				B100000014 /* HTMLParsingService.swift */,
+				B100000016 /* EventExtractionService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -290,6 +305,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				4014543F2F73775F00C764E3 /* dump.html in Resources */,
+				A100000016 /* event-flyer-ocr.txt in Resources */,
+				A100000017 /* event-single-ocr.txt in Resources */,
+				A100000018 /* event-single-caption.txt in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -327,6 +345,8 @@
 				A100000010 /* InstagramWebView.swift in Sources */,
 				A100000011 /* Constants.swift in Sources */,
 				A100000013 /* HTMLParsingService.swift in Sources */,
+				A100000014 /* ExtractedEvent.swift in Sources */,
+				A100000015 /* EventExtractionService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -518,6 +538,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -547,6 +568,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
