@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4014543F2F73775F00C764E3 /* dump.html in Resources */ = {isa = PBXBuildFile; fileRef = 40297B202F736A3B004C8C60 /* dump.html */; };
 		40297B0F2F73688C004C8C60 /* SwiftSoup in Frameworks */ = {isa = PBXBuildFile; productRef = 40297B0E2F73688C004C8C60 /* SwiftSoup */; };
 		40297B1F2F736A12004C8C60 /* SwiftSoup in Frameworks */ = {isa = PBXBuildFile; productRef = 40297B1E2F736A12004C8C60 /* SwiftSoup */; };
 		A100000001 /* MyFirstiOSAppApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000001 /* MyFirstiOSAppApp.swift */; };
@@ -288,6 +289,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4014543F2F73775F00C764E3 /* dump.html in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
