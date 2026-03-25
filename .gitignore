@@ -3,7 +3,7 @@ DerivedData/
 build/
 *.xcodeproj/xcuserdata/
 *.xcworkspace/xcuserdata/
-*.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
+*.xcodeproj/project.xcworkspace/
 
 # Swift Package Manager
 .build/
@@ -50,6 +50,12 @@ playground.xcworkspace/
 !default.mode2v3
 *.perspectivev3
 !default.perspectivev3
+
+# Claude Code
+.claude/
+
+# Compiled scripts
+scripts/extract_post
 
 # Misc
 *.hmap
