@@ -1,0 +1,12 @@
+# SwiftFormat Configuration
+# See: https://github.com/nicklockwood/SwiftFormat
+
+--swiftversion 5.9
+--indent 4
+--indentcase false
+--trimwhitespace always
+--voidtype void
+--wraparguments before-first
+--wrapcollections before-first
+--maxwidth 120
+--exclude .build,DerivedData
