@@ -29,12 +29,36 @@ struct ContentView: View {
 
     var body: some View {
         ZStack {
-            // Show the loading view while processing, results view when done.
             if viewModel.isLoading {
-                LoadingView(
-                    phase: viewModel.loadingPhase,
-                    progress: viewModel.progress
-                )
+                // Show the live web view while loading so the user can see the
+                // page rendering. A status overlay sits on top.
+                if viewModel.needsWebView {
+                    InstagramWebView(url: viewModel.targetURL) { content in
+                        Task { @MainActor in
+                            await viewModel.handleExtractedContent(content)
+                        }
+                    }
+                    .ignoresSafeArea()
+
+                    // Semi-transparent status bar at the bottom
+                    VStack {
+                        Spacer()
+                        HStack(spacing: 10) {
+                            ProgressView()
+                            Text(viewModel.loadingPhase.rawValue)
+                                .font(.subheadline.bold())
+                        }
+                        .padding()
+                        .frame(maxWidth: .infinity)
+                        .background(.ultraThinMaterial)
+                    }
+                } else {
+                    // Post-webview processing (downloading images, running OCR)
+                    LoadingView(
+                        phase: viewModel.loadingPhase,
+                        progress: viewModel.progress
+                    )
+                }
             } else if let post = viewModel.post {
                 ResultsView(post: post, targetURL: viewModel.targetURL)
             } else if let error = viewModel.errorMessage {
@@ -55,18 +79,6 @@ struct ContentView: View {
                     }
                     .buttonStyle(.borderedProminent)
                 }
-            }
-
-            // The hidden web view that loads Instagram and extracts content.
-            // It's placed in the ZStack but has zero size — it works off-screen.
-            // We only include it when the ViewModel says it's needed.
-            if viewModel.needsWebView {
-                InstagramWebView(url: viewModel.targetURL) { content in
-                    Task { @MainActor in
-                        await viewModel.handleExtractedContent(content)
-                    }
-                }
-                .frame(width: 0, height: 0)
             }
         }
         .onAppear {
