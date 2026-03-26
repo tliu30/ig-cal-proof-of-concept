@@ -82,12 +82,74 @@ Requires Apple Developer account and valid provisioning profile.
 ### Running Tests
 
 ```bash
+# Run all tests (use 300000ms+ timeout in CI/agents — builds take ~60-90s)
 xcodebuild test -scheme MyFirstiOSApp -project MyFirstiOSApp.xcodeproj \
   -sdk iphonesimulator \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
+
+# Run a specific test suite (use the Swift struct name, NOT the @Suite display name)
+xcodebuild test -scheme MyFirstiOSApp -project MyFirstiOSApp.xcodeproj \
+  -sdk iphonesimulator \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+  -only-testing:'MyFirstiOSAppTests/MultiEventFlyerTests'
 ```
 
 Always use **iPhone 17 Pro** as the simulator destination — it matches our physical test device.
+
+#### Critical: Seeing Test Failure Details
+
+This project uses the **Swift Testing framework** (`import Testing`, `@Test`, `#expect`), not XCTest. By default, xcodebuild runs tests in parallel and **swallows all failure details** — you only see "passed/failed" with no expectation messages.
+
+**Always add `-parallel-testing-enabled NO`** to see failure details:
+
+```bash
+xcodebuild test -scheme MyFirstiOSApp -project MyFirstiOSApp.xcodeproj \
+  -sdk iphonesimulator \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+  -parallel-testing-enabled NO
+```
+
+With this flag, output includes:
+- `#expect` failure messages with evaluated values (e.g., `(results.count → 0) == 6`)
+- Custom failure comments on `↳` lines
+- `Issue.record()` diagnostic messages
+
+**Without this flag, you will waste time re-running tests trying to understand failures.**
+
+#### Debugging Test Output
+
+`print()` statements in tests **never appear** in xcodebuild output (even with `-parallel-testing-enabled NO`). Use `Issue.record("message")` instead — this is the Swift Testing-idiomatic way to emit debug output:
+
+```swift
+// ✗ WRONG — print() output is invisible in xcodebuild
+print("DEBUG: result = \(result)")
+
+// ✓ CORRECT — appears on ↳ lines in xcodebuild output
+Issue.record("DEBUG: result = \(result)")
+```
+
+#### `-only-testing` Filter Syntax
+
+The filter uses the **Swift struct name**, not the `@Suite("Display Name")` string:
+
+```swift
+@Suite("Multi-Event Flyer Extraction")  // ← this is the display name
+struct MultiEventFlyerTests { ... }     // ← use this for -only-testing
+```
+
+```bash
+# ✗ WRONG — matches 0 tests
+-only-testing:'MyFirstiOSAppTests/Multi-Event Flyer Extraction'
+
+# ✓ CORRECT
+-only-testing:'MyFirstiOSAppTests/MultiEventFlyerTests'
+```
+
+#### Timeouts and Resource Limits
+
+- **Minimum timeout: 300000ms (5 minutes).** The first test run in a session requires building + booting the simulator, which takes 60-90 seconds. Subsequent runs reuse the build cache and are faster (~30-60s).
+- **Do not launch multiple `xcodebuild test` commands in parallel.** Each spawns simulator clones, and macOS will reject them with "Unable to boot device due to insufficient system resources" once process limits are hit. If this happens, run `pkill -f xcodebuild; xcrun simctl shutdown all` and retry.
+- **Prefer a single test run** over many parallel `-only-testing` invocations.
 
 ### TestFlight
 

@@ -25,6 +25,7 @@
 		A100000013 /* HTMLParsingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000014 /* HTMLParsingService.swift */; };
 		A100000014 /* ExtractedEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000015 /* ExtractedEvent.swift */; };
 		A100000015 /* EventExtractionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000016 /* EventExtractionService.swift */; };
+		A100000019 /* GenerableEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000020 /* GenerableEvent.swift */; };
 		A100000016 /* event-flyer-ocr.txt in Resources */ = {isa = PBXBuildFile; fileRef = B100000017 /* event-flyer-ocr.txt */; };
 		A100000017 /* event-single-ocr.txt in Resources */ = {isa = PBXBuildFile; fileRef = B100000018 /* event-single-ocr.txt */; };
 		A100000018 /* event-single-caption.txt in Resources */ = {isa = PBXBuildFile; fileRef = B100000019 /* event-single-caption.txt */; };
@@ -62,6 +63,7 @@
 		B100000017 /* event-flyer-ocr.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "event-flyer-ocr.txt"; sourceTree = "<group>"; };
 		B100000018 /* event-single-ocr.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "event-single-ocr.txt"; sourceTree = "<group>"; };
 		B100000019 /* event-single-caption.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "event-single-caption.txt"; sourceTree = "<group>"; };
+		B100000020 /* GenerableEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GenerableEvent.swift; sourceTree = "<group>"; };
 		C100000001 /* MyFirstiOSApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MyFirstiOSApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -146,6 +148,7 @@
 				B100000003 /* Post.swift */,
 				B100000004 /* OCRResult.swift */,
 				B100000015 /* ExtractedEvent.swift */,
+				B100000020 /* GenerableEvent.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -347,6 +350,7 @@
 				A100000013 /* HTMLParsingService.swift in Sources */,
 				A100000014 /* ExtractedEvent.swift in Sources */,
 				A100000015 /* EventExtractionService.swift in Sources */,
+				A100000019 /* GenerableEvent.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -366,6 +370,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 8J7GKV67HD;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
@@ -388,6 +393,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 8J7GKV67HD;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
@@ -457,7 +463,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -513,7 +519,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
@@ -528,6 +534,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 8J7GKV67HD;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
@@ -538,13 +545,13 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.example.MyFirstiOSApp;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.MyFirstiOSAppH174tgj;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -558,6 +565,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 8J7GKV67HD;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
@@ -568,13 +576,13 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.example.MyFirstiOSApp;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.MyFirstiOSAppH174tgj;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
