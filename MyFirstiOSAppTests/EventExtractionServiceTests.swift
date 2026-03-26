@@ -1,7 +1,6 @@
 /// EventExtractionServiceTests.swift
 /// ==================================
-/// TDD test suite for EventExtractionService, using text fixtures that simulate
-/// real-world OCR output and Instagram post captions.
+/// Parameterized TDD test suite for all event extraction methods.
 ///
 /// ## Test Organization
 /// Tests are organized into three suites:
@@ -9,16 +8,27 @@
 /// 2. Single event extraction (1 event from OCR + caption combined)
 /// 3. Edge cases (empty input, no dates)
 ///
-/// ## Contract
-/// **DO NOT MODIFY THIS FILE DURING EXPERIMENTS.**
-/// Each experiment implements EventExtractionService differently but must pass
-/// these same tests. The tests define the expected behavior; the implementation
-/// is what varies.
+/// Each test runs once per extraction method via `@Test(arguments: testableMethods)`.
+/// Foundation Models is excluded (requires iOS 26+ device with model downloaded).
+/// Llama is included but will return empty if the model file is not present.
 
 import Foundation
 import Testing
 
 @testable import MyFirstiOSApp
+
+// MARK: - Testable Methods
+
+/// Which extraction methods to run in parameterized tests.
+/// Foundation Models is excluded — requires iOS 26+ and on-device model availability.
+/// Llama is included only when the ~1GB GGUF model file is present on disk.
+let testableMethods: [ExtractionMethod] = {
+    var methods: [ExtractionMethod] = [.regex, .nsDataDetector]
+    if LlamaExtractionService.isModelAvailable {
+        methods.append(.llama)
+    }
+    return methods
+}()
 
 // MARK: - Test Data Loading
 
@@ -60,7 +70,6 @@ private let referenceDate: Date = {
 struct MultiEventFlyerTests {
 
     /// The expected events from the flyer, in chronological order.
-    /// Each experiment's implementation must produce events that match these exactly.
     static let expectedEvents: [ExtractedEvent] = [
         ExtractedEvent(
             datetimeStart: "2026-03-04 19:00",
@@ -94,9 +103,10 @@ struct MultiEventFlyerTests {
         ),
     ]
 
-    @Test("Extracts exactly 6 events from flyer")
-    func extractsCorrectCount() {
+    @Test("Extracts exactly 6 events from flyer", arguments: testableMethods)
+    func extractsCorrectCount(method: ExtractionMethod) {
         let results = EventExtractionService.extractEvents(
+            using: method,
             ocrTexts: [flyerOCRText],
             altTexts: [],
             caption: "",
@@ -105,9 +115,10 @@ struct MultiEventFlyerTests {
         #expect(results.count == 6, "Expected 6 events, got \(results.count)")
     }
 
-    @Test("Each expected event is present in the results")
-    func containsAllExpectedEvents() {
+    @Test("Each expected event is present in the results", arguments: testableMethods)
+    func containsAllExpectedEvents(method: ExtractionMethod) {
         let results = EventExtractionService.extractEvents(
+            using: method,
             ocrTexts: [flyerOCRText],
             altTexts: [],
             caption: "",
@@ -121,9 +132,10 @@ struct MultiEventFlyerTests {
         }
     }
 
-    @Test("Midnight end times are on the next calendar day")
-    func midnightEndTimesAreNextDay() {
+    @Test("Midnight end times are on the next calendar day", arguments: testableMethods)
+    func midnightEndTimesAreNextDay(method: ExtractionMethod) {
         let results = EventExtractionService.extractEvents(
+            using: method,
             ocrTexts: [flyerOCRText],
             altTexts: [],
             caption: "",
@@ -140,9 +152,10 @@ struct MultiEventFlyerTests {
         #expect(caratasrophe?.datetimeEnd == "2026-03-28 00:00")
     }
 
-    @Test("M'KAI event ends at 22:30, not midnight")
-    func mkaiEventEndsAt2230() {
+    @Test("M'KAI event ends at 22:30, not midnight", arguments: testableMethods)
+    func mkaiEventEndsAt2230(method: ExtractionMethod) {
         let results = EventExtractionService.extractEvents(
+            using: method,
             ocrTexts: [flyerOCRText],
             altTexts: [],
             caption: "",
@@ -153,9 +166,10 @@ struct MultiEventFlyerTests {
         #expect(mkai?.datetimeEnd == "2026-03-31 22:30")
     }
 
-    @Test("All events have year 2026")
-    func allEventsHave2026() {
+    @Test("All events have year 2026", arguments: testableMethods)
+    func allEventsHave2026(method: ExtractionMethod) {
         let results = EventExtractionService.extractEvents(
+            using: method,
             ocrTexts: [flyerOCRText],
             altTexts: [],
             caption: "",
@@ -172,9 +186,10 @@ struct MultiEventFlyerTests {
 @Suite("Single Event with Caption Extraction")
 struct SingleEventTests {
 
-    @Test("Extracts exactly 1 event")
-    func extractsOneEvent() {
+    @Test("Extracts exactly 1 event", arguments: testableMethods)
+    func extractsOneEvent(method: ExtractionMethod) {
         let results = EventExtractionService.extractEvents(
+            using: method,
             ocrTexts: [singleEventOCRText],
             altTexts: [],
             caption: singleEventCaption,
@@ -183,9 +198,10 @@ struct SingleEventTests {
         #expect(results.count == 1, "Expected 1 event, got \(results.count)")
     }
 
-    @Test("Event date is March 27, 2026 at 22:00")
-    func correctDateAndTime() {
+    @Test("Event date is March 27, 2026 at 22:00", arguments: testableMethods)
+    func correctDateAndTime(method: ExtractionMethod) {
         let results = EventExtractionService.extractEvents(
+            using: method,
             ocrTexts: [singleEventOCRText],
             altTexts: [],
             caption: singleEventCaption,
@@ -196,9 +212,10 @@ struct SingleEventTests {
         #expect(event?.datetimeStart == "2026-03-27 22:00")
     }
 
-    @Test("End time is nil")
-    func endTimeIsNil() {
+    @Test("End time is nil", arguments: testableMethods)
+    func endTimeIsNil(method: ExtractionMethod) {
         let results = EventExtractionService.extractEvents(
+            using: method,
             ocrTexts: [singleEventOCRText],
             altTexts: [],
             caption: singleEventCaption,
@@ -209,9 +226,10 @@ struct SingleEventTests {
         #expect(event?.datetimeEnd == nil, "End time should be nil, got \(event?.datetimeEnd ?? "nil")")
     }
 
-    @Test("Description comes from caption first sentence")
-    func descriptionFromCaption() {
+    @Test("Description comes from caption first sentence", arguments: testableMethods)
+    func descriptionFromCaption(method: ExtractionMethod) {
         let results = EventExtractionService.extractEvents(
+            using: method,
             ocrTexts: [singleEventOCRText],
             altTexts: [],
             caption: singleEventCaption,
@@ -232,9 +250,10 @@ struct SingleEventTests {
 @Suite("Event Extraction Edge Cases")
 struct EventExtractionEdgeCaseTests {
 
-    @Test("Empty input returns empty array")
-    func emptyInput() {
+    @Test("Empty input returns empty array", arguments: testableMethods)
+    func emptyInput(method: ExtractionMethod) {
         let results = EventExtractionService.extractEvents(
+            using: method,
             ocrTexts: [],
             altTexts: [],
             caption: "",
@@ -243,9 +262,10 @@ struct EventExtractionEdgeCaseTests {
         #expect(results.isEmpty, "Expected empty results for empty input")
     }
 
-    @Test("Text with no dates returns empty array")
-    func noDatesInText() {
+    @Test("Text with no dates returns empty array", arguments: testableMethods)
+    func noDatesInText(method: ExtractionMethod) {
         let results = EventExtractionService.extractEvents(
+            using: method,
             ocrTexts: ["Just some random text with no dates or times mentioned anywhere"],
             altTexts: ["A photo of a sunset"],
             caption: "Beautiful evening at the park",

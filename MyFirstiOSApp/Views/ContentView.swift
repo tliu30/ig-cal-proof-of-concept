@@ -60,7 +60,11 @@ struct ContentView: View {
                     )
                 }
             } else if let post = viewModel.post {
-                ResultsView(post: post, targetURL: viewModel.targetURL)
+                ResultsView(
+                    post: post,
+                    targetURL: viewModel.targetURL,
+                    extractionStates: viewModel.extractionStates
+                )
             } else if let error = viewModel.errorMessage {
                 // Error state with retry button.
                 VStack(spacing: 16) {

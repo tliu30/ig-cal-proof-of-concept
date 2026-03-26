@@ -1,6 +1,6 @@
 /// EventExtractionServiceRealPostTests.swift
 /// ==========================================
-/// Test suite for EventExtractionService using real Instagram post extractions.
+/// Parameterized test suite for event extraction using real Instagram post data.
 ///
 /// ## Test Organization
 /// Tests are organized into five suites covering 11 real-world Instagram posts:
@@ -10,15 +10,7 @@
 /// 4. Full Data Multi-Event Flyer — multi-signal input (OCR + alt + caption)
 /// 5. Massive Multi-Event Caption — 17 events from a single caption
 ///
-/// ## Data Sources
-/// Input data (OCR text, alt text, captions) was extracted from real Instagram posts.
-/// Long inputs are loaded from fixture files in test-data/; shorter inputs are inlined.
-///
-/// ## Contract
-/// **DO NOT MODIFY THIS FILE DURING EXPERIMENTS.**
-/// Each experiment implements EventExtractionService differently but must pass
-/// these same tests. The tests define the expected behavior; the implementation
-/// is what varies.
+/// Each test runs once per extraction method via `@Test(arguments: testableMethods)`.
 
 import Foundation
 import Testing
@@ -60,9 +52,10 @@ private let yuAndMeCaption = loadTestData("yuandme-caption.txt")
 struct ZeroEventPostTests {
 
     /// Andrew Bird music video reel — no event information, just a performance clip.
-    @Test("Music video reel extracts no events — DWHeslRCICv")
-    func musicVideoReel() {
+    @Test("Music video reel extracts no events — DWHeslRCICv", arguments: testableMethods)
+    func musicVideoReel(method: ExtractionMethod) {
         let results = EventExtractionService.extractEvents(
+            using: method,
             ocrTexts: ["POLKA-PAR\ne"],
             altTexts: [],
             caption: "Palindromes through the ages. Some hotshot editing from Bonnaroo to orchestra hall.",
@@ -72,8 +65,8 @@ struct ZeroEventPostTests {
     }
 
     /// AAFC recap/thank-you post for a past event ("last night"). No future events.
-    @Test("Past event recap extracts no events — DWT9awgEeTE")
-    func pastEventRecap() {
+    @Test("Past event recap extracts no events — DWT9awgEeTE", arguments: testableMethods)
+    func pastEventRecap(method: ExtractionMethod) {
         let ocrText = """
             WELCOME!
             Building an Asian American Feminist NYC
@@ -98,6 +91,7 @@ struct ZeroEventPostTests {
             and care. Now everyone go get to know your neighbors! 💜
             """
         let results = EventExtractionService.extractEvents(
+            using: method,
             ocrTexts: [ocrText],
             altTexts: [altText, "Photo by ✨Asian Am Feminist Collective on March 25, 2026. May be an image of one or more people, people standing and text."],
             caption: caption,
@@ -114,8 +108,8 @@ struct RealPostSingleEventTests {
 
     /// JVP workshop with dual timezone — uses ET (7 PM) for NYC users.
     /// OCR: "SUNDAY, MARCH 29, 4 PM PT / 7 ET"
-    @Test("JVP workshop with timezone conversion — DWM7AK9Evns")
-    func jvpWorkshop() {
+    @Test("JVP workshop with timezone conversion — DWM7AK9Evns", arguments: testableMethods)
+    func jvpWorkshop(method: ExtractionMethod) {
         let ocrText = """
             TALKING PALESTINE
             at Passover
@@ -134,6 +128,7 @@ struct RealPostSingleEventTests {
             .....・ ........ inrsronomien .... ...... .٠٠٠'.
             """
         let results = EventExtractionService.extractEvents(
+            using: method,
             ocrTexts: [ocrText],
             altTexts: [altText],
             caption: "Join us!",
@@ -152,8 +147,8 @@ struct RealPostSingleEventTests {
     }
 
     /// Three performing duos at Brothers Wash and Dry — single event, multiple performers.
-    @Test("Brothers Wash and Dry with multiple performers — DWO1_myArzG")
-    func brothersWashAndDry() {
+    @Test("Brothers Wash and Dry with multiple performers — DWO1_myArzG", arguments: testableMethods)
+    func brothersWashAndDry(method: ExtractionMethod) {
         let ocrText = """
             Brothers Wash and Dry
             Thurs, March 26" at 7pm
@@ -177,6 +172,7 @@ struct RealPostSingleEventTests {
             3️⃣ @sunjayjayaram + @evan.crane_
             """
         let results = EventExtractionService.extractEvents(
+            using: method,
             ocrTexts: [ocrText],
             altTexts: [altText],
             caption: caption,
@@ -196,8 +192,8 @@ struct RealPostSingleEventTests {
 
     /// FRUITFLIES at All Night Skate — caption corrects OCR time "8-12PM" to "8PM - 12AM".
     /// End time midnight = next day 00:00.
-    @Test("FRUITFLIES caption corrects OCR time — DWOnARRltPm")
-    func fruitflies() {
+    @Test("FRUITFLIES caption corrects OCR time — DWOnARRltPm", arguments: testableMethods)
+    func fruitflies(method: ExtractionMethod) {
         let ocr1 = """
             Night
             shate
@@ -245,6 +241,7 @@ struct RealPostSingleEventTests {
             5-10 suggested donation (Venmo/cashapp @yearoftheteagress $yearoftheteagress)
             """
         let results = EventExtractionService.extractEvents(
+            using: method,
             ocrTexts: [ocr1, ocr2],
             altTexts: [
                 "Photo by ℲǝℲǝ / 阿烏 on March 23, 2026. May be an image of poster and text that says 'APRIL 4, 2026 8-12PM ALL NIGHT SKATE'.",
@@ -267,8 +264,8 @@ struct RealPostSingleEventTests {
 
     /// MayDay Strong virtual mass call — virtual/Zoom event.
     /// OCR: "WEDNESDAY, MARCH 25 | 8 PM EST"
-    @Test("MayDay virtual mass call — DWPn3BBj4RF")
-    func maydayVirtualCall() {
+    @Test("MayDay virtual mass call — DWPn3BBj4RF", arguments: testableMethods)
+    func maydayVirtualCall(method: ExtractionMethod) {
         let ocrText = """
             AFTER NO RINGS,
             WHAT'S NEXT?
@@ -304,6 +301,7 @@ struct RealPostSingleEventTests {
             to learn more #workersoverbillionaires
             """
         let results = EventExtractionService.extractEvents(
+            using: method,
             ocrTexts: [ocrText],
             altTexts: [altText],
             caption: caption,
@@ -323,8 +321,8 @@ struct RealPostSingleEventTests {
 
     /// Spanish-language podcast launch at Queens Museum.
     /// Doors at 6:30 PM, show at 7:00 PM — uses doors time as datetimeStart.
-    @Test("Spanish-language podcast launch — DWT_8OnjsFT")
-    func lasReinasDeQueens() {
+    @Test("Spanish-language podcast launch — DWT_8OnjsFT", arguments: testableMethods)
+    func lasReinasDeQueens(method: ExtractionMethod) {
         let ocrText = """
             RADIO AMBULANTE STUDIOS **iHeartRadio
             PRESENTAN:
@@ -365,6 +363,7 @@ struct RealPostSingleEventTests {
             Acompáñanos.
             """
         let results = EventExtractionService.extractEvents(
+            using: method,
             ocrTexts: [ocrText],
             altTexts: [altText],
             caption: caption,
@@ -383,8 +382,8 @@ struct RealPostSingleEventTests {
     }
 
     /// Met Council on Housing volunteer training — date/time from both caption and OCR.
-    @Test("Met Council volunteer training — DWT4VwqDJa8")
-    func metCouncilTraining() {
+    @Test("Met Council volunteer training — DWT4VwqDJa8", arguments: testableMethods)
+    func metCouncilTraining(method: ExtractionMethod) {
         let ocrText = """
             MET COUNCIL ON HOUSING
             Volunteers Needed
@@ -428,6 +427,7 @@ struct RealPostSingleEventTests {
             🔗metcouncilonhousing.org/calendar
             """
         let results = EventExtractionService.extractEvents(
+            using: method,
             ocrTexts: [ocrText],
             altTexts: [altText],
             caption: caption,
@@ -453,8 +453,8 @@ struct MultiDayEventTests {
 
     /// Big Apple Tango Weekend — 4-day event with no specific daily times.
     /// Uses date-only format (no HH:mm) for datetimeStart and datetimeEnd.
-    @Test("Big Apple Tango Weekend uses date-only format — DWUE0pZjRvi")
-    func bigAppleTangoWeekend() {
+    @Test("Big Apple Tango Weekend uses date-only format — DWUE0pZjRvi", arguments: testableMethods)
+    func bigAppleTangoWeekend(method: ExtractionMethod) {
         let ocrText = """
             Join us
             For unforgettable Tango Weekend
@@ -488,6 +488,7 @@ struct MultiDayEventTests {
             #TangoWeekend #NYCTango #ArgentineTango #Milonga #TangoLife
             """
         let results = EventExtractionService.extractEvents(
+            using: method,
             ocrTexts: [ocrText],
             altTexts: [],
             caption: caption,
@@ -512,7 +513,6 @@ struct MultiDayEventTests {
 struct FullDataMultiEventFlyerTests {
 
     /// Full OCR text from the DDOOLL event flyer (image 1 of 2).
-    /// This is the raw OCR output, slightly different from the simplified event-flyer-ocr.txt.
     static let ocrText = """
         DRINK SPECIALS
         GOOD TIMES
@@ -534,7 +534,7 @@ struct FullDataMultiEventFlyerTests {
         To inquire about hosting your event with us DM @DDOOLL.2 on instagram or email events@september.com
         """
 
-    /// Alt text from image 1 — contains full event listing from Instagram's image description.
+    /// Alt text from image 1.
     static let altText = """
         Photo by @ddooll.2 on March 03, 2026. May be an image of poster, \
         calendar, magazine and text that says 'DRINK SPECIALS TEST KITCHEN \
@@ -551,9 +551,10 @@ struct FullDataMultiEventFlyerTests {
 
     static let caption = "Got a full month of evening programming ahead. Which one will we see you at?"
 
-    @Test("Extracts exactly 6 events with full input data — DVb33j7lVEm")
-    func extractsCorrectCount() {
+    @Test("Extracts exactly 6 events with full input data — DVb33j7lVEm", arguments: testableMethods)
+    func extractsCorrectCount(method: ExtractionMethod) {
         let results = EventExtractionService.extractEvents(
+            using: method,
             ocrTexts: [Self.ocrText, ""],
             altTexts: [Self.altText, "Video by @ddooll.2 on March 03, 2026. May be an image of cocktail and text."],
             caption: Self.caption,
@@ -562,9 +563,10 @@ struct FullDataMultiEventFlyerTests {
         #expect(results.count == 6, "Expected 6 events, got \(results.count)")
     }
 
-    @Test("Matches same events as OCR-only flyer test")
-    func matchesOCROnlyExpectations() {
+    @Test("Matches same events as OCR-only flyer test", arguments: testableMethods)
+    func matchesOCROnlyExpectations(method: ExtractionMethod) {
         let results = EventExtractionService.extractEvents(
+            using: method,
             ocrTexts: [Self.ocrText, ""],
             altTexts: [Self.altText, "Video by @ddooll.2 on March 03, 2026. May be an image of cocktail and text."],
             caption: Self.caption,
@@ -714,9 +716,10 @@ struct MassiveMultiEventTests {
         ),
     ]
 
-    @Test("Extracts 17 events from Yu and Me Books — DWUG-qPkefo")
-    func extractsCorrectCount() {
+    @Test("Extracts 17 events from Yu and Me Books — DWUG-qPkefo", arguments: testableMethods)
+    func extractsCorrectCount(method: ExtractionMethod) {
         let results = EventExtractionService.extractEvents(
+            using: method,
             ocrTexts: [Self.ocr1, Self.ocr2],
             altTexts: [Self.alt1, Self.alt2],
             caption: yuAndMeCaption,
@@ -725,9 +728,10 @@ struct MassiveMultiEventTests {
         #expect(results.count == 17, "Expected 17 events, got \(results.count)")
     }
 
-    @Test("All 17 expected events are present")
-    func containsAllExpectedEvents() {
+    @Test("All 17 expected events are present", arguments: testableMethods)
+    func containsAllExpectedEvents(method: ExtractionMethod) {
         let results = EventExtractionService.extractEvents(
+            using: method,
             ocrTexts: [Self.ocr1, Self.ocr2],
             altTexts: [Self.alt1, Self.alt2],
             caption: yuAndMeCaption,
@@ -741,9 +745,10 @@ struct MassiveMultiEventTests {
         }
     }
 
-    @Test("Events are in chronological order")
-    func eventsAreChronological() {
+    @Test("Events are in chronological order", arguments: testableMethods)
+    func eventsAreChronological(method: ExtractionMethod) {
         let results = EventExtractionService.extractEvents(
+            using: method,
             ocrTexts: [Self.ocr1, Self.ocr2],
             altTexts: [Self.alt1, Self.alt2],
             caption: yuAndMeCaption,

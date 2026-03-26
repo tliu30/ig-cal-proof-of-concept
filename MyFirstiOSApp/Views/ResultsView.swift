@@ -14,9 +14,10 @@
 
 import SwiftUI
 
-/// Shows the extraction results in two tabs:
-/// 1. Post content with OCR results (existing view)
+/// Shows the extraction results in six tabs:
+/// 1. Post content with OCR results
 /// 2. HTML parsing output (preprocessed HTML, captions, image URLs, alt texts)
+/// 3–6. Event extraction results from each method (Regex, NSDataDetector, Foundation Models, Llama)
 struct ResultsView: View {
     /// The fully-processed post data.
     let post: Post
@@ -24,7 +25,10 @@ struct ResultsView: View {
     /// The original URL, shown as a tappable link.
     let targetURL: URL
 
-    /// Which tab is currently selected (0 = Results, 1 = Parsed HTML).
+    /// Per-method extraction state, passed from the ViewModel.
+    let extractionStates: [ExtractionMethod: ExtractionState]
+
+    /// Which tab is currently selected.
     @State private var selectedTab = 0
 
     /// Parsed results from HTMLParsingService, computed asynchronously from pageSource.
@@ -34,6 +38,19 @@ struct ResultsView: View {
     @State private var preprocessedHTML: String = ""
     @State private var hasParsed = false
 
+    /// Navigation title based on the selected tab.
+    private var tabTitle: String {
+        switch selectedTab {
+        case 0: return "Results"
+        case 1: return "Parsed HTML"
+        case 2: return ExtractionMethod.regex.tabLabel
+        case 3: return ExtractionMethod.nsDataDetector.tabLabel
+        case 4: return ExtractionMethod.foundationModels.tabLabel
+        case 5: return ExtractionMethod.llama.tabLabel
+        default: return "Results"
+        }
+    }
+
     var body: some View {
         NavigationStack {
             TabView(selection: $selectedTab) {
@@ -42,10 +59,30 @@ struct ResultsView: View {
 
                 parsedHTMLTab
                     .tag(1)
+
+                EventExtractionTab(
+                    method: .regex,
+                    state: extractionStates[.regex] ?? .idle
+                ).tag(2)
+
+                EventExtractionTab(
+                    method: .nsDataDetector,
+                    state: extractionStates[.nsDataDetector] ?? .idle
+                ).tag(3)
+
+                EventExtractionTab(
+                    method: .foundationModels,
+                    state: extractionStates[.foundationModels] ?? .idle
+                ).tag(4)
+
+                EventExtractionTab(
+                    method: .llama,
+                    state: extractionStates[.llama] ?? .idle
+                ).tag(5)
             }
             .tabViewStyle(.page(indexDisplayMode: .always))
             .indexViewStyle(.page(backgroundDisplayMode: .always))
-            .navigationTitle(selectedTab == 0 ? "Results" : "Parsed HTML")
+            .navigationTitle(tabTitle)
             .navigationBarTitleDisplayMode(.inline)
         }
         .task {

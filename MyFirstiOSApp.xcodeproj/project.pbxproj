@@ -28,6 +28,14 @@
 		A100000016 /* event-flyer-ocr.txt in Resources */ = {isa = PBXBuildFile; fileRef = B100000017 /* event-flyer-ocr.txt */; };
 		A100000017 /* event-single-ocr.txt in Resources */ = {isa = PBXBuildFile; fileRef = B100000018 /* event-single-ocr.txt */; };
 		A100000018 /* event-single-caption.txt in Resources */ = {isa = PBXBuildFile; fileRef = B100000019 /* event-single-caption.txt */; };
+		A100000019 /* ExtractionMethod.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000020 /* ExtractionMethod.swift */; };
+		A100000020 /* GenerableEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000021 /* GenerableEvent.swift */; };
+		A100000021 /* RegexExtractionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000022 /* RegexExtractionService.swift */; };
+		A100000022 /* NSDataDetectorExtractionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000023 /* NSDataDetectorExtractionService.swift */; };
+		A100000023 /* FoundationModelsExtractionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000024 /* FoundationModelsExtractionService.swift */; };
+		A100000024 /* LlamaExtractionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000025 /* LlamaExtractionService.swift */; };
+		A100000025 /* EventExtractionTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000026 /* EventExtractionTab.swift */; };
+		D0A1A0032F738000000AA003 /* LlamaSwift in Frameworks */ = {isa = PBXBuildFile; productRef = D0A1A0022F738000000AA002 /* LlamaSwift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -62,6 +70,13 @@
 		B100000017 /* event-flyer-ocr.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "event-flyer-ocr.txt"; sourceTree = "<group>"; };
 		B100000018 /* event-single-ocr.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "event-single-ocr.txt"; sourceTree = "<group>"; };
 		B100000019 /* event-single-caption.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "event-single-caption.txt"; sourceTree = "<group>"; };
+		B100000020 /* ExtractionMethod.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtractionMethod.swift; sourceTree = "<group>"; };
+		B100000021 /* GenerableEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GenerableEvent.swift; sourceTree = "<group>"; };
+		B100000022 /* RegexExtractionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegexExtractionService.swift; sourceTree = "<group>"; };
+		B100000023 /* NSDataDetectorExtractionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSDataDetectorExtractionService.swift; sourceTree = "<group>"; };
+		B100000024 /* FoundationModelsExtractionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoundationModelsExtractionService.swift; sourceTree = "<group>"; };
+		B100000025 /* LlamaExtractionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LlamaExtractionService.swift; sourceTree = "<group>"; };
+		B100000026 /* EventExtractionTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventExtractionTab.swift; sourceTree = "<group>"; };
 		C100000001 /* MyFirstiOSApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MyFirstiOSApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -83,6 +98,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				40297B0F2F73688C004C8C60 /* SwiftSoup in Frameworks */,
+				D0A1A0032F738000000AA003 /* LlamaSwift in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -146,6 +162,8 @@
 				B100000003 /* Post.swift */,
 				B100000004 /* OCRResult.swift */,
 				B100000015 /* ExtractedEvent.swift */,
+				B100000020 /* ExtractionMethod.swift */,
+				B100000021 /* GenerableEvent.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -165,6 +183,7 @@
 			isa = PBXGroup;
 			children = (
 				B100000007 /* ImageOCRCard.swift */,
+				B100000026 /* EventExtractionTab.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -184,6 +203,10 @@
 				B100000010 /* InstagramWebView.swift */,
 				B100000014 /* HTMLParsingService.swift */,
 				B100000016 /* EventExtractionService.swift */,
+				B100000022 /* RegexExtractionService.swift */,
+				B100000023 /* NSDataDetectorExtractionService.swift */,
+				B100000024 /* FoundationModelsExtractionService.swift */,
+				B100000025 /* LlamaExtractionService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -248,12 +271,17 @@
 				F100000002 /* Sources */,
 				D100000001 /* Frameworks */,
 				F100000003 /* Resources */,
+				C200000001 /* Copy LLM Model */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
 			name = MyFirstiOSApp;
+			packageProductDependencies = (
+				40297B0E2F73688C004C8C60 /* SwiftSoup */,
+				D0A1A0022F738000000AA002 /* LlamaSwift */,
+			);
 			productName = MyFirstiOSApp;
 			productReference = C100000001 /* MyFirstiOSApp.app */;
 			productType = "com.apple.product-type.application";
@@ -288,6 +316,7 @@
 			mainGroup = E100000001;
 			packageReferences = (
 				40297B0D2F73688B004C8C60 /* XCRemoteSwiftPackageReference "SwiftSoup" */,
+				D0A1A0012F738000000AA001 /* XCRemoteSwiftPackageReference "llama.swift" */,
 			);
 			productRefGroup = E100000010 /* Products */;
 			projectDirPath = "";
@@ -321,6 +350,26 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		C200000001 /* Copy LLM Model */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/models/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf",
+			);
+			name = "Copy LLM Model";
+			outputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Conditionally bundle the LLM model file if it exists on disk.\n# The build succeeds either way — Llama extraction gracefully\n# returns empty results when the model is absent.\n\nMODEL_SRC=\"${SCRIPT_INPUT_FILE_0}\"\nMODEL_DST=\"${SCRIPT_OUTPUT_FILE_0}\"\n\nif [ -f \"${MODEL_SRC}\" ]; then\n  echo \"Bundling LLM model ($(du -h \"${MODEL_SRC}\" | cut -f1))...\"\n  cp \"${MODEL_SRC}\" \"${MODEL_DST}\"\nelse\n  echo \"note: LLM model not found at ${MODEL_SRC} — Llama extraction will be unavailable.\"\n  rm -f \"${MODEL_DST}\"\nfi\nexit 0\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		40297B102F7368B8004C8C60 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -347,6 +396,13 @@
 				A100000013 /* HTMLParsingService.swift in Sources */,
 				A100000014 /* ExtractedEvent.swift in Sources */,
 				A100000015 /* EventExtractionService.swift in Sources */,
+				A100000019 /* ExtractionMethod.swift in Sources */,
+				A100000020 /* GenerableEvent.swift in Sources */,
+				A100000021 /* RegexExtractionService.swift in Sources */,
+				A100000022 /* NSDataDetectorExtractionService.swift in Sources */,
+				A100000023 /* FoundationModelsExtractionService.swift in Sources */,
+				A100000024 /* LlamaExtractionService.swift in Sources */,
+				A100000025 /* EventExtractionTab.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -627,6 +683,14 @@
 				minimumVersion = 2.13.3;
 			};
 		};
+		D0A1A0012F738000000AA001 /* XCRemoteSwiftPackageReference "llama.swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/mattt/llama.swift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.8530.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -639,6 +703,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 40297B0D2F73688B004C8C60 /* XCRemoteSwiftPackageReference "SwiftSoup" */;
 			productName = SwiftSoup;
+		};
+		D0A1A0022F738000000AA002 /* LlamaSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D0A1A0012F738000000AA001 /* XCRemoteSwiftPackageReference "llama.swift" */;
+			productName = LlamaSwift;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

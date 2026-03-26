@@ -76,6 +76,9 @@ class PostViewModel {
     /// Progress for the current phase (0.0 to 1.0).
     var progress: Double = 0
 
+    /// Per-method extraction state. Each tab in ResultsView observes its own key.
+    var extractionStates: [ExtractionMethod: ExtractionState] = [:]
+
     // MARK: - Private State
 
     /// The OCR service (an actor) that handles text recognition.
@@ -128,6 +131,13 @@ class PostViewModel {
             loadingPhase = .complete
             isLoading = false
             progress = 1.0
+
+            // Still run extraction on whatever text we have.
+            await launchExtractions(
+                ocrResults: [:],
+                pageSource: content.pageSource,
+                textContent: content.textContent
+            )
             return
         }
 
@@ -170,6 +180,129 @@ class PostViewModel {
         loadingPhase = .complete
         isLoading = false
         progress = 1.0
+
+        // Launch all four extraction methods in parallel.
+        await launchExtractions(
+            ocrResults: ocrResults,
+            pageSource: content.pageSource,
+            textContent: content.textContent
+        )
+    }
+
+    // MARK: - Parallel Extraction
+
+    /// Parses HTML for alt texts and captions, then launches all extraction methods concurrently.
+    ///
+    /// Called after the Post model is built and `isLoading` is set to false, so ResultsView
+    /// is already visible. Each extraction tab shows a spinner until its method completes.
+    @MainActor
+    private func launchExtractions(
+        ocrResults: [URL: OCRResult],
+        pageSource: String,
+        textContent: String
+    ) async {
+        // Initialize all states to running.
+        for method in ExtractionMethod.allCases {
+            extractionStates[method] = .running
+        }
+
+        // Parse HTML on a background thread to get alt texts and captions.
+        let (altTexts, captions) = await Task.detached {
+            let alts = (try? HTMLParsingService.extractImageAltTexts(from: pageSource)) ?? []
+            let caps = (try? HTMLParsingService.extractCaptions(from: pageSource)) ?? []
+            return (alts, caps)
+        }.value
+
+        let ocrTexts = ocrResults.values.map { $0.recognizedText }
+        let caption = captions.first ?? textContent
+        let currentDate = Date()
+
+        let inputs = ExtractionInputs(
+            ocrTexts: ocrTexts,
+            altTexts: altTexts,
+            caption: caption,
+            currentDate: currentDate
+        )
+
+        await runAllExtractions(inputs: inputs)
+    }
+
+    /// Runs all four extraction methods concurrently using a TaskGroup.
+    /// Updates `extractionStates` as each method completes, allowing SwiftUI
+    /// to re-render only the affected tab.
+    @MainActor
+    private func runAllExtractions(inputs: ExtractionInputs) async {
+        await withTaskGroup(of: (ExtractionMethod, ExtractionState).self) { group in
+
+            // A: Regex (synchronous — run on background thread)
+            group.addTask {
+                let results = await Task.detached {
+                    RegexExtractionService.extractEvents(
+                        ocrTexts: inputs.ocrTexts,
+                        altTexts: inputs.altTexts,
+                        caption: inputs.caption,
+                        currentDate: inputs.currentDate
+                    )
+                }.value
+                return (.regex, .completed(results))
+            }
+
+            // B: NSDataDetector (synchronous — run on background thread)
+            group.addTask {
+                let results = await Task.detached {
+                    NSDataDetectorExtractionService.extractEvents(
+                        ocrTexts: inputs.ocrTexts,
+                        altTexts: inputs.altTexts,
+                        caption: inputs.caption,
+                        currentDate: inputs.currentDate
+                    )
+                }.value
+                return (.nsDataDetector, .completed(results))
+            }
+
+            // C: Foundation Models (iOS 26+ only, check availability)
+            group.addTask {
+                #if canImport(FoundationModels)
+                if #available(iOS 26.0, *) {
+                    guard FoundationModelsExtractionService.isModelAvailable else {
+                        return (.foundationModels, .skipped("No model available"))
+                    }
+                    let results = await FoundationModelsExtractionService.extractEventsAsync(
+                        ocrTexts: inputs.ocrTexts,
+                        altTexts: inputs.altTexts,
+                        caption: inputs.caption,
+                        currentDate: inputs.currentDate
+                    )
+                    return (.foundationModels, .completed(results))
+                } else {
+                    return (.foundationModels, .skipped("No model available (requires iOS 26+)"))
+                }
+                #else
+                return (.foundationModels, .skipped("No model available (requires iOS 26+)"))
+                #endif
+            }
+
+            // D: Llama (synchronous — run on background thread, skip if model absent)
+            group.addTask {
+                guard LlamaExtractionService.isModelAvailable else {
+                    return (.llama, .skipped("No model available"))
+                }
+                let results = await Task.detached {
+                    LlamaExtractionService.extractEvents(
+                        ocrTexts: inputs.ocrTexts,
+                        altTexts: inputs.altTexts,
+                        caption: inputs.caption,
+                        currentDate: inputs.currentDate
+                    )
+                }.value
+                return (.llama, .completed(results))
+            }
+
+            // Update states as each method finishes.
+            for await (method, state) in group {
+                self.extractionStates[method] = state
+            }
+        }
     }
 
     // MARK: - Private Helpers

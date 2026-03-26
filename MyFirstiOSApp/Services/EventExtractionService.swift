@@ -1,50 +1,63 @@
 /// EventExtractionService.swift
 /// ============================
-/// Extracts structured date/time events from unstructured text sources.
+/// Dispatch helper that routes event extraction to the correct implementation
+/// based on `ExtractionMethod`. Used by the test suite's parameterized tests
+/// and by the ViewModel's parallel extraction pipeline.
 ///
-/// ## What This Does
-/// Takes raw text from multiple sources — OCR output from images, image alt texts,
-/// and post captions — and identifies events with start times, optional end times,
-/// and descriptions. For example, given OCR text from a flyer image that says
-/// "Fri - March 13th St. Slayer's Day hosted by DJ ILUVDOMRICH 7-Midnite",
-/// it produces an `ExtractedEvent` with datetimeStart "2026-03-13 19:00",
-/// datetimeEnd "2026-03-14 00:00", and description "St. Slayer's Day hosted by DJ ILUVDOMRICH".
-///
-/// ## Input Sources
-/// - **ocrTexts**: Text recognized from images via Apple Vision OCR. May contain
-///   artifacts, misspellings, and fragmented lines.
-/// - **altTexts**: Alt text attributes from `<img>` tags in the page HTML. Often
-///   contain descriptions written by the post author.
-/// - **caption**: The post caption text extracted from the page.
-/// - **currentDate**: Used to infer the year (since flyers rarely include the year).
-///
-/// ## Design
-/// This is a caseless `enum` (cannot be instantiated) that acts as a pure namespace
-/// for static functions — the same pattern used by `HTMLParsingService`.
-///
-/// ## Implementation Status
-/// This is currently a stub that returns an empty array. The implementation will be
-/// filled in during experimentation with different approaches (regex, NSDataDetector,
-/// Apple Foundation Models, on-device LLM).
+/// Each method delegates to its own service file:
+/// - `.regex` → `RegexExtractionService`
+/// - `.nsDataDetector` → `NSDataDetectorExtractionService`
+/// - `.foundationModels` → `FoundationModelsExtractionService` (iOS 26+ only)
+/// - `.llama` → `LlamaExtractionService`
 
 import Foundation
 
 enum EventExtractionService {
 
-    /// Extracts structured events from unstructured text sources.
+    /// Extracts structured events using the specified method.
     ///
     /// - Parameters:
+    ///   - method: Which extraction algorithm to use.
     ///   - ocrTexts: Array of text strings recognized from images via OCR.
     ///   - altTexts: Array of image alt text strings from the page HTML.
     ///   - caption: The post caption text.
     ///   - currentDate: The current date, used to infer the year for dates that omit it.
-    /// - Returns: Array of extracted events with start/end datetimes and descriptions.
+    /// - Returns: Array of extracted events sorted chronologically.
     static func extractEvents(
+        using method: ExtractionMethod,
         ocrTexts: [String],
         altTexts: [String],
         caption: String,
         currentDate: Date
     ) -> [ExtractedEvent] {
-        return [] // stub -- experiments replace this
+        switch method {
+        case .regex:
+            return RegexExtractionService.extractEvents(
+                ocrTexts: ocrTexts, altTexts: altTexts,
+                caption: caption, currentDate: currentDate
+            )
+        case .nsDataDetector:
+            return NSDataDetectorExtractionService.extractEvents(
+                ocrTexts: ocrTexts, altTexts: altTexts,
+                caption: caption, currentDate: currentDate
+            )
+        case .foundationModels:
+            // Foundation Models requires iOS 26+ and on-device model availability.
+            // Tested separately; returns empty here for the synchronous test path.
+            #if canImport(FoundationModels)
+            if #available(iOS 26.0, *) {
+                return FoundationModelsExtractionService.extractEvents(
+                    ocrTexts: ocrTexts, altTexts: altTexts,
+                    caption: caption, currentDate: currentDate
+                )
+            }
+            #endif
+            return []
+        case .llama:
+            return LlamaExtractionService.extractEvents(
+                ocrTexts: ocrTexts, altTexts: altTexts,
+                caption: caption, currentDate: currentDate
+            )
+        }
     }
 }
