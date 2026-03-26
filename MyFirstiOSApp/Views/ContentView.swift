@@ -63,7 +63,8 @@ struct ContentView: View {
                 ResultsView(
                     post: post,
                     targetURL: viewModel.targetURL,
-                    extractionStates: viewModel.extractionStates
+                    extractionStates: viewModel.extractionStates,
+                    llamaDiagnostics: viewModel.llamaDiagnostics
                 )
             } else if let error = viewModel.errorMessage {
                 // Error state with retry button.

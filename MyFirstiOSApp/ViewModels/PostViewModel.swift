@@ -79,6 +79,9 @@ class PostViewModel {
     /// Per-method extraction state. Each tab in ResultsView observes its own key.
     var extractionStates: [ExtractionMethod: ExtractionState] = [:]
 
+    /// Diagnostic info from the most recent Llama inference, if available.
+    var llamaDiagnostics: LlamaDiagnostics?
+
     // MARK: - Private State
 
     /// The OCR service (an actor) that handles text recognition.
@@ -232,7 +235,7 @@ class PostViewModel {
     /// to re-render only the affected tab.
     @MainActor
     private func runAllExtractions(inputs: ExtractionInputs) async {
-        await withTaskGroup(of: (ExtractionMethod, ExtractionState).self) { group in
+        await withTaskGroup(of: (ExtractionMethod, ExtractionState, LlamaDiagnostics?).self) { group in
 
             // A: Regex (synchronous — run on background thread)
             group.addTask {
@@ -244,7 +247,7 @@ class PostViewModel {
                         currentDate: inputs.currentDate
                     )
                 }.value
-                return (.regex, .completed(results))
+                return (.regex, .completed(results), nil)
             }
 
             // B: NSDataDetector (synchronous — run on background thread)
@@ -257,7 +260,7 @@ class PostViewModel {
                         currentDate: inputs.currentDate
                     )
                 }.value
-                return (.nsDataDetector, .completed(results))
+                return (.nsDataDetector, .completed(results), nil)
             }
 
             // C: Foundation Models (iOS 26+ only, check availability)
@@ -265,7 +268,7 @@ class PostViewModel {
                 #if canImport(FoundationModels)
                 if #available(iOS 26.0, *) {
                     guard FoundationModelsExtractionService.isModelAvailable else {
-                        return (.foundationModels, .skipped("No model available"))
+                        return (.foundationModels, .skipped("No model available"), nil)
                     }
                     let results = await FoundationModelsExtractionService.extractEventsAsync(
                         ocrTexts: inputs.ocrTexts,
@@ -273,21 +276,21 @@ class PostViewModel {
                         caption: inputs.caption,
                         currentDate: inputs.currentDate
                     )
-                    return (.foundationModels, .completed(results))
+                    return (.foundationModels, .completed(results), nil)
                 } else {
-                    return (.foundationModels, .skipped("No model available (requires iOS 26+)"))
+                    return (.foundationModels, .skipped("No model available (requires iOS 26+)"), nil)
                 }
                 #else
-                return (.foundationModels, .skipped("No model available (requires iOS 26+)"))
+                return (.foundationModels, .skipped("No model available (requires iOS 26+)"), nil)
                 #endif
             }
 
             // D: Llama (synchronous — run on background thread, skip if model absent)
             group.addTask {
                 guard LlamaExtractionService.isModelAvailable else {
-                    return (.llama, .skipped("No model available"))
+                    return (.llama, .skipped("No model available"), nil)
                 }
-                let results = await Task.detached {
+                let (results, diagnostics) = await Task.detached {
                     LlamaExtractionService.extractEvents(
                         ocrTexts: inputs.ocrTexts,
                         altTexts: inputs.altTexts,
@@ -295,12 +298,15 @@ class PostViewModel {
                         currentDate: inputs.currentDate
                     )
                 }.value
-                return (.llama, .completed(results))
+                return (.llama, .completed(results), diagnostics)
             }
 
             // Update states as each method finishes.
-            for await (method, state) in group {
+            for await (method, state, diagnostics) in group {
                 self.extractionStates[method] = state
+                if let diagnostics {
+                    self.llamaDiagnostics = diagnostics
+                }
             }
         }
     }

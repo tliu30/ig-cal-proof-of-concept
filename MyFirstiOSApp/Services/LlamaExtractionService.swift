@@ -40,14 +40,14 @@ enum LlamaExtractionService {
         altTexts: [String],
         caption: String,
         currentDate: Date
-    ) -> [ExtractedEvent] {
+    ) -> (events: [ExtractedEvent], diagnostics: LlamaDiagnostics?) {
         let trimmedCaption = caption.trimmingCharacters(in: .whitespacesAndNewlines)
         let nonEmptyOCR = ocrTexts.filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
         let nonEmptyAlt = altTexts.filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
 
         // Early exit: nothing to work with
         guard !nonEmptyOCR.isEmpty || !nonEmptyAlt.isEmpty || !trimmedCaption.isEmpty else {
-            return []
+            return ([], nil)
         }
 
         // Build the user prompt (system prompt is pre-cached in the session file)
@@ -63,16 +63,16 @@ enum LlamaExtractionService {
         manager.loadIfNeeded()
 
         guard manager.isReady else {
-            return []
+            return ([], nil)
         }
 
-        let response = manager.generate(userPrompt: userPrompt, maxTokens: 4096)
+        let (response, diagnostics) = manager.generate(userPrompt: userPrompt, maxTokens: 4096)
 
         // Parse JSON response
         let events = parseResponse(response)
 
         // Sort chronologically
-        return events.sorted { $0.datetimeStart < $1.datetimeStart }
+        return (events.sorted { $0.datetimeStart < $1.datetimeStart }, diagnostics)
     }
 }
 
@@ -189,6 +189,9 @@ private final class LlamaModelManager {
     private var sampler: UnsafeMutablePointer<llama_sampler>?
     private(set) var isReady = false
 
+    /// Number of GPU layers offloaded (0 = CPU-only).
+    private var nGpuLayers: Int32 = 0
+
     /// Number of tokens in the cached system prompt prefix.
     /// Loaded from a session file on disk (or computed once and saved).
     private var cachedSystemTokenCount: Int32 = 0
@@ -263,7 +266,7 @@ private final class LlamaModelManager {
         llama_backend_init()
 
         var mparams = llama_model_default_params()
-        mparams.n_gpu_layers = 0 // CPU-only: Metal in iOS Simulator has massive overhead
+        mparams.n_gpu_layers = nGpuLayers // CPU-only: Metal in iOS Simulator has massive overhead
         model = llama_model_load_from_file(path, mparams)
 
         guard model != nil else {
@@ -383,8 +386,10 @@ private final class LlamaModelManager {
 
     // MARK: - Text Generation (with prompt caching)
 
-    func generate(userPrompt: String, maxTokens: Int = 4096) -> String {
-        guard isReady, let model, let ctx, let sampler else { return "[]" }
+    func generate(userPrompt: String, maxTokens: Int = 4096) -> (String, LlamaDiagnostics?) {
+        guard isReady, let model, let ctx, let sampler else { return ("[]", nil) }
+
+        let startTime = ContinuousClock.now
 
         let vocab = llama_model_get_vocab(model)!
         let mem = llama_get_memory(ctx)
@@ -397,7 +402,7 @@ private final class LlamaModelManager {
         llama_memory_seq_rm(mem, 0, cachedSystemTokenCount, -1)
 
         let nUserTokens = tokenizeAndDecode(userSuffix, vocab: vocab, ctx: ctx, startPos: cachedSystemTokenCount)
-        guard nUserTokens > 0 else { return "[]" }
+        guard nUserTokens > 0 else { return ("[]", nil) }
         print("[LlamaModelManager] Processed \(nUserTokens) user tokens (system: \(cachedSystemTokenCount) cached)")
 
         // Autoregressive generation loop
@@ -429,9 +434,24 @@ private final class LlamaModelManager {
             nGenerated += 1
         }
 
-        print("[LlamaModelManager] Generated \(nGenerated) tokens")
+        let elapsed = ContinuousClock.now - startTime
+        let elapsedSeconds = Double(elapsed.components.seconds)
+            + Double(elapsed.components.attoseconds) / 1e18
+
+        print("[LlamaModelManager] Generated \(nGenerated) tokens in \(String(format: "%.1f", elapsedSeconds))s")
         llama_sampler_reset(sampler)
-        return output
+
+        let diagnostics = LlamaDiagnostics(
+            usesGPU: nGpuLayers > 0,
+            gpuLayerCount: nGpuLayers,
+            modelName: Self.modelFilename,
+            cachedSystemTokens: cachedSystemTokenCount,
+            userTokens: nUserTokens,
+            generatedTokens: nGenerated,
+            inferenceDuration: elapsedSeconds
+        )
+
+        return (output, diagnostics)
     }
 
     // MARK: - Helpers

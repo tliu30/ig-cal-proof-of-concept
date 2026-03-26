@@ -36,6 +36,7 @@
 		A100000024 /* LlamaExtractionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000025 /* LlamaExtractionService.swift */; };
 		A100000025 /* EventExtractionTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000026 /* EventExtractionTab.swift */; };
 		A100000026 /* LlamaSystemPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000027 /* LlamaSystemPrompt.swift */; };
+		A100000027 /* LlamaExtractionTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000028 /* LlamaExtractionTab.swift */; };
 		D0A1A0032F738000000AA003 /* LlamaSwift in Frameworks */ = {isa = PBXBuildFile; productRef = D0A1A0022F738000000AA002 /* LlamaSwift */; };
 /* End PBXBuildFile section */
 
@@ -79,6 +80,7 @@
 		B100000025 /* LlamaExtractionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LlamaExtractionService.swift; sourceTree = "<group>"; };
 		B100000026 /* EventExtractionTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventExtractionTab.swift; sourceTree = "<group>"; };
 		B100000027 /* LlamaSystemPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LlamaSystemPrompt.swift; sourceTree = "<group>"; };
+		B100000028 /* LlamaExtractionTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LlamaExtractionTab.swift; sourceTree = "<group>"; };
 		C100000001 /* MyFirstiOSApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MyFirstiOSApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -186,6 +188,7 @@
 			children = (
 				B100000007 /* ImageOCRCard.swift */,
 				B100000026 /* EventExtractionTab.swift */,
+				B100000028 /* LlamaExtractionTab.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -409,6 +412,7 @@
 				A100000024 /* LlamaExtractionService.swift in Sources */,
 				A100000025 /* EventExtractionTab.swift in Sources */,
 				A100000026 /* LlamaSystemPrompt.swift in Sources */,
+				A100000027 /* LlamaExtractionTab.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

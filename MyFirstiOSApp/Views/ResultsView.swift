@@ -28,6 +28,9 @@ struct ResultsView: View {
     /// Per-method extraction state, passed from the ViewModel.
     let extractionStates: [ExtractionMethod: ExtractionState]
 
+    /// Diagnostic info from the most recent Llama inference, if available.
+    let llamaDiagnostics: LlamaDiagnostics?
+
     /// Which tab is currently selected.
     @State private var selectedTab = 0
 
@@ -75,9 +78,9 @@ struct ResultsView: View {
                     state: extractionStates[.foundationModels] ?? .idle
                 ).tag(4)
 
-                EventExtractionTab(
-                    method: .llama,
-                    state: extractionStates[.llama] ?? .idle
+                LlamaExtractionTab(
+                    state: extractionStates[.llama] ?? .idle,
+                    diagnostics: llamaDiagnostics
                 ).tag(5)
             }
             .tabViewStyle(.page(indexDisplayMode: .always))

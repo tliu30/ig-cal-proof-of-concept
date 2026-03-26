@@ -56,3 +56,27 @@ struct ExtractionInputs {
     let caption: String
     let currentDate: Date
 }
+
+/// Diagnostic information from a Llama LLM inference run.
+struct LlamaDiagnostics {
+    /// Whether inference used GPU layers (derived from gpuLayerCount > 0).
+    let usesGPU: Bool
+
+    /// Number of GPU layers offloaded (0 = CPU-only).
+    let gpuLayerCount: Int32
+
+    /// Name of the GGUF model file used for inference.
+    let modelName: String
+
+    /// Number of system prompt tokens loaded from the KV cache (cache hit).
+    let cachedSystemTokens: Int32
+
+    /// Number of user-specific tokens tokenized and decoded for this request.
+    let userTokens: Int32
+
+    /// Number of tokens generated (output).
+    let generatedTokens: Int32
+
+    /// Wall-clock duration of the generate() call, in seconds.
+    let inferenceDuration: TimeInterval
+}

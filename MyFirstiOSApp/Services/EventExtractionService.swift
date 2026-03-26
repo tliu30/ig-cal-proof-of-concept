@@ -57,7 +57,7 @@ enum EventExtractionService {
             return LlamaExtractionService.extractEvents(
                 ocrTexts: ocrTexts, altTexts: altTexts,
                 caption: caption, currentDate: currentDate
-            )
+            ).events
         }
     }
 }
