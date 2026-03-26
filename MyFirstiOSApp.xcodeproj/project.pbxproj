@@ -35,6 +35,7 @@
 		A100000023 /* FoundationModelsExtractionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000024 /* FoundationModelsExtractionService.swift */; };
 		A100000024 /* LlamaExtractionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000025 /* LlamaExtractionService.swift */; };
 		A100000025 /* EventExtractionTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000026 /* EventExtractionTab.swift */; };
+		A100000026 /* LlamaSystemPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000027 /* LlamaSystemPrompt.swift */; };
 		D0A1A0032F738000000AA003 /* LlamaSwift in Frameworks */ = {isa = PBXBuildFile; productRef = D0A1A0022F738000000AA002 /* LlamaSwift */; };
 /* End PBXBuildFile section */
 
@@ -77,6 +78,7 @@
 		B100000024 /* FoundationModelsExtractionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoundationModelsExtractionService.swift; sourceTree = "<group>"; };
 		B100000025 /* LlamaExtractionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LlamaExtractionService.swift; sourceTree = "<group>"; };
 		B100000026 /* EventExtractionTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventExtractionTab.swift; sourceTree = "<group>"; };
+		B100000027 /* LlamaSystemPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LlamaSystemPrompt.swift; sourceTree = "<group>"; };
 		C100000001 /* MyFirstiOSApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MyFirstiOSApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -207,6 +209,7 @@
 				B100000023 /* NSDataDetectorExtractionService.swift */,
 				B100000024 /* FoundationModelsExtractionService.swift */,
 				B100000025 /* LlamaExtractionService.swift */,
+				B100000027 /* LlamaSystemPrompt.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -271,7 +274,7 @@
 				F100000002 /* Sources */,
 				D100000001 /* Frameworks */,
 				F100000003 /* Resources */,
-				C200000001 /* Copy LLM Model */,
+				C200000001 /* Copy LLM Model + Cache */,
 			);
 			buildRules = (
 			);
@@ -351,7 +354,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		C200000001 /* Copy LLM Model */ = {
+		C200000001 /* Copy LLM Model + Cache */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -359,14 +362,16 @@
 			);
 			inputPaths = (
 				"$(SRCROOT)/models/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf",
+				"$(SRCROOT)/models/system-prompt-cache.bin",
 			);
-			name = "Copy LLM Model";
+			name = "Copy LLM Model + Cache";
 			outputPaths = (
 				"$(BUILT_PRODUCTS_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf",
+				"$(BUILT_PRODUCTS_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/system-prompt-cache.bin",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# Conditionally bundle the LLM model file if it exists on disk.\n# The build succeeds either way — Llama extraction gracefully\n# returns empty results when the model is absent.\n\nMODEL_SRC=\"${SCRIPT_INPUT_FILE_0}\"\nMODEL_DST=\"${SCRIPT_OUTPUT_FILE_0}\"\n\nif [ -f \"${MODEL_SRC}\" ]; then\n  echo \"Bundling LLM model ($(du -h \"${MODEL_SRC}\" | cut -f1))...\"\n  cp \"${MODEL_SRC}\" \"${MODEL_DST}\"\nelse\n  echo \"note: LLM model not found at ${MODEL_SRC} — Llama extraction will be unavailable.\"\n  rm -f \"${MODEL_DST}\"\nfi\nexit 0\n";
+			shellScript = "# Conditionally bundle the LLM model file and pre-computed KV cache.\n# The build succeeds either way — Llama extraction gracefully\n# returns empty results when the model is absent.\n\nMODEL_SRC=\"${SCRIPT_INPUT_FILE_0}\"\nMODEL_DST=\"${SCRIPT_OUTPUT_FILE_0}\"\nCACHE_SRC=\"${SCRIPT_INPUT_FILE_1}\"\nCACHE_DST=\"${SCRIPT_OUTPUT_FILE_1}\"\n\nif [ -f \"${MODEL_SRC}\" ]; then\n  echo \"Bundling LLM model ($(du -h \"${MODEL_SRC}\" | cut -f1))...\"\n  cp \"${MODEL_SRC}\" \"${MODEL_DST}\"\nelse\n  echo \"note: LLM model not found at ${MODEL_SRC} — Llama extraction will be unavailable.\"\n  rm -f \"${MODEL_DST}\"\nfi\n\nif [ -f \"${CACHE_SRC}\" ]; then\n  echo \"Bundling pre-computed KV cache ($(du -h \"${CACHE_SRC}\" | cut -f1))...\"\n  cp \"${CACHE_SRC}\" \"${CACHE_DST}\"\nelse\n  echo \"note: Pre-computed KV cache not found — will be generated on first run.\"\n  rm -f \"${CACHE_DST}\"\nfi\nexit 0\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -403,6 +408,7 @@
 				A100000023 /* FoundationModelsExtractionService.swift in Sources */,
 				A100000024 /* LlamaExtractionService.swift in Sources */,
 				A100000025 /* EventExtractionTab.swift in Sources */,
+				A100000026 /* LlamaSystemPrompt.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

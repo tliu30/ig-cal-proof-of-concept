@@ -16,12 +16,14 @@ MODEL_FILENAME := Qwen2.5-1.5B-Instruct-Q4_K_M.gguf
 MODEL_DIR      := models
 MODEL_PATH     := $(MODEL_DIR)/$(MODEL_FILENAME)
 MODEL_URL      := https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf
+CACHE_PATH     := $(MODEL_DIR)/system-prompt-cache.bin
+CACHE_TOOL_DIR := tools/generate-cache
 
 # xcodebuild base command
 XCODEBUILD := xcodebuild -scheme $(SCHEME) -project $(PROJECT)
 
 # --- Phony targets -----------------------------------------------------------
-.PHONY: help build test lint format fix clean open install download-model check preflight
+.PHONY: help build test lint format fix clean open install download-model generate-cache check preflight
 
 # --- Default target -----------------------------------------------------------
 .DEFAULT_GOAL := help
@@ -85,6 +87,22 @@ download-model: ## Download Qwen2.5-1.5B model (~1.1 GB) for local LLM extractio
 		echo "Model downloaded to $(MODEL_PATH)"; \
 	fi
 
+# --- Generate system prompt KV cache -----------------------------------------
+generate-cache: ## Pre-compute the system prompt KV cache for Llama (~30s on Apple Silicon)
+	@if [ ! -f "$(MODEL_PATH)" ]; then \
+		echo "Error: Model not found at $(MODEL_PATH). Run: make download-model"; \
+		exit 1; \
+	fi
+	@if [ -f "$(CACHE_PATH)" ]; then \
+		echo "Cache already exists at $(CACHE_PATH). Delete it to regenerate."; \
+	else \
+		echo "Building cache generator tool..."; \
+		cd "$(CURDIR)/$(CACHE_TOOL_DIR)" && swift build -c release 2>&1; \
+		echo "Generating system prompt KV cache..."; \
+		cd "$(CURDIR)/$(CACHE_TOOL_DIR)" && swift run -c release --skip-build generate-cache \
+			"$(CURDIR)/$(MODEL_PATH)" "$(CURDIR)/$(CACHE_PATH)"; \
+	fi
+
 # --- Check prerequisites -----------------------------------------------------
 check: ## Verify all required tools and files are present
 	@echo "Checking prerequisites..."
@@ -93,6 +111,7 @@ check: ## Verify all required tools and files are present
 	@command -v swiftformat >/dev/null 2>&1 && echo "  ✓ swiftformat" || echo "  ✗ swiftformat (run: make install)"
 	@command -v brew       >/dev/null 2>&1 && echo "  ✓ brew"        || echo "  ✗ brew (see https://brew.sh)"
 	@[ -f "$(MODEL_PATH)" ] && echo "  ✓ LLM model"  || echo "  ✗ LLM model (run: make download-model)"
+	@[ -f "$(CACHE_PATH)" ] && echo "  ✓ LLM cache"  || echo "  ✗ LLM cache (run: make generate-cache)"
 
 # --- Preflight ---------------------------------------------------------------
 preflight: format lint build test ## Format, lint, build, and test

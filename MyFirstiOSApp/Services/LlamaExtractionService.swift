@@ -78,85 +78,13 @@ enum LlamaExtractionService {
 
 // MARK: - Prompt Engineering
 
-// fileprivate so LlamaModelManager can access buildSystemPrompt for session caching
-fileprivate extension LlamaExtractionService {
+private extension LlamaExtractionService {
 
     static func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         formatter.locale = Locale(identifier: "en_US_POSIX")
         return formatter.string(from: date)
-    }
-
-    static func buildSystemPrompt(currentDate: Date) -> String {
-        """
-        You are an event extraction system. Extract structured event data from Instagram post content.
-
-        ## Output Format
-        Return ONLY a JSON array of events. No other text, no explanations, no markdown code fences. Each event object has:
-        - "datetimeStart": string in "YYYY-MM-DD HH:mm" format for events with times, or "YYYY-MM-DD" for multi-day events with no specific daily times
-        - "datetimeEnd": string in same format, or null if unknown. When only a start time is given, set to null
-        - "description": string — concise event name with key performers/details (under 80 characters)
-
-        If there are no events, return exactly: []
-
-        ## Rules
-
-        ### Date/Time
-        - 24-hour format: "19:00" not "7:00 PM"
-        - Midnight end times use NEXT calendar day "00:00" (event March 13 ending midnight → datetimeEnd "2026-03-14 00:00")
-        - Multi-day events with no daily schedule: date-only "YYYY-MM-DD" for both start and end
-        - "7-11pm" means 19:00 to 23:00. "7-Midnite" or "7-Midnight" means 19:00 to 00:00 (next day)
-        - "10PM" alone with no end time → datetimeEnd is null
-        - RSVP/entry/discount times like "$5 before 11pm" or "free b4 midnight" are NOT end times — ignore them for datetimeEnd
-
-        ### Year Inference
-        - Current date: \(formatDate(currentDate))
-        - If a date has no year, use the current year or next year — whichever puts it closest to the future from the current date
-
-        ### Timezone
-        - Dual timezones like "4 PM PT / 7 ET": use Eastern Time (ET) since this is NYC. So 7 PM ET = 19:00
-
-        ### Past Events
-        - If the caption says "last night", "who came out", "thank you to the crowd" etc, this is a recap of a PAST event. Return []
-
-        ### Typo Corrections
-        - If caption has "***TYPO" or "****TYPO" followed by corrected times like "8PM - 12AM", use those corrected times instead of what OCR shows
-        - OCR "8-12PM" but caption says "TYPO - 8PM - 12AM" → start 20:00, end 00:00 next day
-
-        ### Doors/Show
-        - "Doors: 6:30 p.m. / Show: 7:00 p.m." → use doors time (6:30 PM = 18:30) as datetimeStart
-
-        ### Spanish Dates
-        - "7 de abril de 2026" = April 7, 2026
-
-        ### Event Counting
-        - Multiple performers at one venue on one date/time = ONE event, not separate events
-        - A flyer with shows on different dates = one event per date
-        - Monthly calendar with separate listings = one event per listing
-
-        ### Descriptions
-        - Use the caption's first sentence/line as the base for the description (keep most of its words)
-        - Include key performers/artists mentioned
-        - Include venue name if clearly stated
-        - Prefer caption text over OCR for spelling
-        - Remove emojis, @handles, and URLs but keep the rest of the wording
-
-        ## Examples
-
-        Example 1 — time range gives both start and end:
-        OCR: "OPEN MIC NIGHT\\nFri March 15\\n8-11pm\\nAt The Venue"
-        Output: [{"datetimeStart":"2026-03-15 20:00","datetimeEnd":"2026-03-15 23:00","description":"Open Mic Night at The Venue"}]
-
-        Example 2 — single time, no end time, RSVP discount is NOT an end time:
-        Caption: "SAZONAO RETURNS THIS FRIDAY! 10PM | $5 entry b4 11pm"
-        OCR: "MARCH 27TH"
-        Output: [{"datetimeStart":"2026-03-27 22:00","datetimeEnd":null,"description":"Sazonao Returns This Friday"}]
-
-        Example 3 — no events:
-        Caption: "Beautiful sunset at the park"
-        Output: []
-        """
     }
 
     static func buildUserPrompt(
@@ -308,12 +236,17 @@ private final class LlamaModelManager {
             .path
     }
 
-    private static var sessionCachePath: String {
-        // Place the cache alongside the model file.
-        URL(fileURLWithPath: modelFilePath)
-            .deletingLastPathComponent()
-            .appendingPathComponent("system-prompt-cache.bin")
-            .path
+    /// Path to the pre-built cache bundled with the app (read-only).
+    /// Returns nil if no bundled cache exists.
+    private static var bundledCachePath: String? {
+        Bundle.main.path(forResource: "system-prompt-cache", ofType: "bin")
+    }
+
+    /// Path for the runtime-generated cache in the app's writable Caches directory.
+    /// Used as a fallback when no bundled cache is available.
+    private static var writableCachePath: String {
+        let caches = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+        return caches.appendingPathComponent("system-prompt-cache.bin").path
     }
 
     // MARK: - Model Loading
@@ -361,32 +294,53 @@ private final class LlamaModelManager {
     }
 
     /// Loads the pre-computed system prompt KV cache from disk, or creates it on first run.
-    /// This eliminates the ~130s first-call penalty for processing the 948-token system prompt.
+    ///
+    /// Checks three locations in order:
+    /// 1. **Bundled cache** — pre-built at build time via `make generate-cache`, read-only
+    /// 2. **Writable cache** — generated on a previous app run, in the Caches directory
+    /// 3. **Generate fresh** — decodes the system prompt (~130s) and saves to writable path
     private func loadOrCreateSessionCache() {
         guard let model, let ctx else { return }
         let vocab = llama_model_get_vocab(model)!
-        let cachePath = Self.sessionCachePath
 
-        if FileManager.default.fileExists(atPath: cachePath) {
-            // Load pre-computed state from disk
-            var tokens = [llama_token](repeating: 0, count: 4096)
-            var nTokens: Int = 0
-            let ok = tokens.withUnsafeMutableBufferPointer { buf in
-                llama_state_load_file(ctx, cachePath, buf.baseAddress!, 4096, &nTokens)
-            }
-            if ok {
-                cachedSystemTokenCount = Int32(nTokens)
-                print("[LlamaModelManager] Session cache loaded (\(nTokens) tokens) from disk")
-                return
-            }
-            print("[LlamaModelManager] Session cache load failed, regenerating")
+        // 1. Try bundled cache first (pre-computed at build time, read-only)
+        if let bundledPath = Self.bundledCachePath,
+           loadCacheFromDisk(path: bundledPath, vocab: vocab) {
+            return
         }
 
-        // First run: process system prompt and save to disk
-        // Use a fixed reference date for the cache (tests use 2026-03-25)
-        let currentDate = Date()
-        let systemPrompt = LlamaExtractionService.buildSystemPrompt(currentDate: currentDate)
-        let systemPrefix = "<|im_start|>system\n\(systemPrompt)<|im_end|>\n<|im_start|>user\n"
+        // 2. Try writable cache (generated on a previous run)
+        let writablePath = Self.writableCachePath
+        if FileManager.default.fileExists(atPath: writablePath),
+           loadCacheFromDisk(path: writablePath, vocab: vocab) {
+            return
+        }
+
+        // 3. Generate from scratch and save to writable location
+        generateAndSaveCache(savePath: writablePath, vocab: vocab)
+    }
+
+    /// Attempts to load a session cache file from the given path.
+    /// Returns true if successful, false otherwise.
+    private func loadCacheFromDisk(path: String, vocab _: OpaquePointer) -> Bool {
+        var tokens = [llama_token](repeating: 0, count: 4096)
+        var nTokens: Int = 0
+        let ok = tokens.withUnsafeMutableBufferPointer { buf in
+            llama_state_load_file(ctx!, path, buf.baseAddress!, 4096, &nTokens)
+        }
+        if ok {
+            cachedSystemTokenCount = Int32(nTokens)
+            print("[LlamaModelManager] Session cache loaded (\(nTokens) tokens) from: \(path)")
+            return true
+        }
+        print("[LlamaModelManager] Failed to load cache from: \(path)")
+        return false
+    }
+
+    /// Processes the static system prompt through the model and saves the KV cache to disk.
+    /// This is the slow path (~130s on device) that only runs when no pre-built cache exists.
+    private func generateAndSaveCache(savePath: String, vocab: OpaquePointer) {
+        let systemPrefix = llamaSystemPromptPrefix
 
         // Tokenize
         let nBytes = Int32(systemPrefix.utf8.count)
@@ -408,7 +362,7 @@ private final class LlamaModelManager {
             let currentBatch = min(remaining, 512)
             let result: Int32 = tokens.withUnsafeMutableBufferPointer { buf in
                 let ptr = buf.baseAddress! + Int(nProcessed)
-                return llama_decode(ctx, llama_batch_get_one(ptr, currentBatch))
+                return llama_decode(ctx!, llama_batch_get_one(ptr, currentBatch))
             }
             if result != 0 {
                 print("[LlamaModelManager] System prompt decode failed")
@@ -419,10 +373,10 @@ private final class LlamaModelManager {
 
         // Save state to disk
         let saved = tokens.withUnsafeBufferPointer { buf in
-            llama_state_save_file(ctx, cachePath, buf.baseAddress!, Int(nTokens))
+            llama_state_save_file(ctx!, savePath, buf.baseAddress!, Int(nTokens))
         }
         if saved {
-            print("[LlamaModelManager] Session cache saved (\(nTokens) tokens) to disk")
+            print("[LlamaModelManager] Session cache saved (\(nTokens) tokens) to: \(savePath)")
         }
         cachedSystemTokenCount = nTokens
     }
