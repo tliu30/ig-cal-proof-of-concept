@@ -44,8 +44,7 @@ enum EventExtractionService {
             return []
         }
 
-        // Build the prompt
-        let systemPrompt = buildSystemPrompt(currentDate: currentDate)
+        // Build the user prompt (system prompt is pre-cached in the session file)
         let userPrompt = buildUserPrompt(
             ocrTexts: nonEmptyOCR,
             altTexts: nonEmptyAlt,
@@ -61,7 +60,7 @@ enum EventExtractionService {
             return []
         }
 
-        let response = manager.generate(systemPrompt: systemPrompt, userPrompt: userPrompt, maxTokens: 4096)
+        let response = manager.generate(userPrompt: userPrompt, maxTokens: 4096)
 
         // Parse JSON response
         let events = parseResponse(response)
@@ -73,7 +72,8 @@ enum EventExtractionService {
 
 // MARK: - Prompt Engineering
 
-private extension EventExtractionService {
+// fileprivate so LlamaModelManager can access buildSystemPrompt for session caching
+fileprivate extension EventExtractionService {
 
     static func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()
@@ -256,10 +256,8 @@ private final class LlamaModelManager {
     private(set) var isReady = false
 
     /// Number of tokens in the cached system prompt prefix.
-    /// After the first call, subsequent calls reuse this prefix in the KV cache
-    /// and only process the user-specific tokens — a ~10x speedup.
+    /// Loaded from a session file on disk (or computed once and saved).
     private var cachedSystemTokenCount: Int32 = 0
-    private var cachedSystemPrompt: String = ""
 
     private init() {}
 
@@ -272,19 +270,29 @@ private final class LlamaModelManager {
 
     // MARK: - Model Path Resolution
 
+    private static var modelsDir: URL {
+        if let envPath = ProcessInfo.processInfo.environment["LLAMA_MODEL_PATH"],
+           FileManager.default.fileExists(atPath: envPath) {
+            return URL(fileURLWithPath: envPath).deletingLastPathComponent()
+        }
+        let thisFile = URL(fileURLWithPath: #filePath)
+        return thisFile
+            .deletingLastPathComponent() // Services/
+            .deletingLastPathComponent() // MyFirstiOSApp/
+            .deletingLastPathComponent() // project root
+            .appendingPathComponent("models")
+    }
+
     private static var modelPath: String {
         if let envPath = ProcessInfo.processInfo.environment["LLAMA_MODEL_PATH"],
            FileManager.default.fileExists(atPath: envPath) {
             return envPath
         }
+        return modelsDir.appendingPathComponent("Qwen2.5-1.5B-Instruct-Q4_K_M.gguf").path
+    }
 
-        let thisFile = URL(fileURLWithPath: #filePath)
-        let projectRoot = thisFile
-            .deletingLastPathComponent() // Services/
-            .deletingLastPathComponent() // MyFirstiOSApp/
-            .deletingLastPathComponent() // project root
-        let modelFile = projectRoot.appendingPathComponent("models/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf")
-        return modelFile.path
+    private static var sessionCachePath: String {
+        modelsDir.appendingPathComponent("system-prompt-cache.bin").path
     }
 
     // MARK: - Model Loading
@@ -324,46 +332,98 @@ private final class LlamaModelManager {
         llama_sampler_chain_add(sampler, llama_sampler_init_temp(0.0))
         llama_sampler_chain_add(sampler, llama_sampler_init_greedy())
 
+        // Load or create the system prompt session cache
+        loadOrCreateSessionCache()
+
         isReady = true
         print("[LlamaModelManager] Model loaded successfully")
     }
 
+    /// Loads the pre-computed system prompt KV cache from disk, or creates it on first run.
+    /// This eliminates the ~130s first-call penalty for processing the 948-token system prompt.
+    private func loadOrCreateSessionCache() {
+        guard let model, let ctx else { return }
+        let vocab = llama_model_get_vocab(model)!
+        let cachePath = Self.sessionCachePath
+
+        if FileManager.default.fileExists(atPath: cachePath) {
+            // Load pre-computed state from disk
+            var tokens = [llama_token](repeating: 0, count: 4096)
+            var nTokens: Int = 0
+            let ok = tokens.withUnsafeMutableBufferPointer { buf in
+                llama_state_load_file(ctx, cachePath, buf.baseAddress!, 4096, &nTokens)
+            }
+            if ok {
+                cachedSystemTokenCount = Int32(nTokens)
+                print("[LlamaModelManager] Session cache loaded (\(nTokens) tokens) from disk")
+                return
+            }
+            print("[LlamaModelManager] Session cache load failed, regenerating")
+        }
+
+        // First run: process system prompt and save to disk
+        // Use a fixed reference date for the cache (tests use 2026-03-25)
+        let currentDate = Date()
+        let systemPrompt = EventExtractionService.buildSystemPrompt(currentDate: currentDate)
+        let systemPrefix = "<|im_start|>system\n\(systemPrompt)<|im_end|>\n<|im_start|>user\n"
+
+        // Tokenize
+        let nBytes = Int32(systemPrefix.utf8.count)
+        let maxTokens = nBytes + 64
+        var tokens = [llama_token](repeating: 0, count: Int(maxTokens))
+        let nTokens = systemPrefix.withCString { cStr in
+            llama_tokenize(vocab, cStr, nBytes, &tokens, maxTokens, true, true)
+        }
+        guard nTokens > 0 else {
+            print("[LlamaModelManager] System prompt tokenization failed")
+            return
+        }
+
+        // Decode (the slow part — only happens once)
+        print("[LlamaModelManager] Processing system prompt (\(nTokens) tokens)...")
+        var nProcessed: Int32 = 0
+        while nProcessed < nTokens {
+            let remaining = nTokens - nProcessed
+            let currentBatch = min(remaining, 512)
+            let result: Int32 = tokens.withUnsafeMutableBufferPointer { buf in
+                let ptr = buf.baseAddress! + Int(nProcessed)
+                return llama_decode(ctx, llama_batch_get_one(ptr, currentBatch))
+            }
+            if result != 0 {
+                print("[LlamaModelManager] System prompt decode failed")
+                return
+            }
+            nProcessed += currentBatch
+        }
+
+        // Save state to disk
+        let saved = tokens.withUnsafeBufferPointer { buf in
+            llama_state_save_file(ctx, cachePath, buf.baseAddress!, Int(nTokens))
+        }
+        if saved {
+            print("[LlamaModelManager] Session cache saved (\(nTokens) tokens) to disk")
+        }
+        cachedSystemTokenCount = nTokens
+    }
+
     // MARK: - Text Generation (with prompt caching)
 
-    func generate(systemPrompt: String, userPrompt: String, maxTokens: Int = 4096) -> String {
+    func generate(userPrompt: String, maxTokens: Int = 4096) -> String {
         guard isReady, let model, let ctx, let sampler else { return "[]" }
 
         let vocab = llama_model_get_vocab(model)!
         let mem = llama_get_memory(ctx)
 
-        // Build the system prefix (constant across calls) and user suffix
-        let systemPrefix = "<|im_start|>system\n\(systemPrompt)<|im_end|>\n<|im_start|>user\n"
+        // System prompt is pre-cached in the KV cache (loaded from session file).
+        // Only process the user-specific tokens for each call.
         let userSuffix = "\(userPrompt)<|im_end|>\n<|im_start|>assistant\n"
 
-        // Check if we can reuse the cached system prompt
-        let systemChanged = (systemPrompt != cachedSystemPrompt)
+        // Remove previous user tokens, keep cached system prefix
+        llama_memory_seq_rm(mem, 0, cachedSystemTokenCount, -1)
 
-        if systemChanged {
-            // First call or system prompt changed: process everything from scratch
-            llama_memory_clear(mem, true)
-            cachedSystemTokenCount = 0
-            cachedSystemPrompt = systemPrompt
-
-            let fullPrompt = systemPrefix + userSuffix
-            let nTokens = tokenizeAndDecode(fullPrompt, vocab: vocab, ctx: ctx, startPos: 0)
-            guard nTokens > 0 else { return "[]" }
-
-            // Calculate system prefix token count for future caching
-            cachedSystemTokenCount = tokenize(systemPrefix, vocab: vocab)
-            print("[LlamaModelManager] System prompt cached (\(cachedSystemTokenCount) tokens), total \(nTokens) tokens")
-        } else {
-            // Reuse cached system prompt: only remove user tokens, keep system in KV cache
-            llama_memory_seq_rm(mem, 0, cachedSystemTokenCount, -1)
-
-            let nUserTokens = tokenizeAndDecode(userSuffix, vocab: vocab, ctx: ctx, startPos: cachedSystemTokenCount)
-            guard nUserTokens > 0 else { return "[]" }
-            print("[LlamaModelManager] Reusing cached system (\(cachedSystemTokenCount) tokens), processed \(nUserTokens) user tokens")
-        }
+        let nUserTokens = tokenizeAndDecode(userSuffix, vocab: vocab, ctx: ctx, startPos: cachedSystemTokenCount)
+        guard nUserTokens > 0 else { return "[]" }
+        print("[LlamaModelManager] Processed \(nUserTokens) user tokens (system: \(cachedSystemTokenCount) cached)")
 
         // Autoregressive generation loop
         var output = ""
