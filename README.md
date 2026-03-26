@@ -1,6 +1,56 @@
-# Introduction
+# MyFirstiOSApp
 
-Create a proof-of-concept iOS app that 
+Proof-of-concept iOS app that loads an Instagram post, extracts text, runs OCR
+on full-sized images using Apple Vision, and displays the results.
+
+## Quick Start
+
+```bash
+# Install dev tools (SwiftLint, SwiftFormat)
+make install
+
+# Download the LLM model for local event extraction (~1.1 GB)
+make download-model
+
+# Verify your setup
+make check
+
+# Open in Xcode (then Cmd+R to run)
+make open
+
+# Build from command line
+make build
+
+# Run tests
+make test
+
+# Lint (check only)
+make lint
+
+# Auto-format
+make format
+
+# Full preflight check (format → lint → build → test)
+make preflight
+
+# See all available commands
+make help
+```
+
+## Prerequisites
+
+- **macOS** with [Xcode](https://developer.apple.com/xcode/) 15+ installed
+- **Homebrew** ([brew.sh](https://brew.sh)) for installing lint tools
+- Run `make check` to verify your setup
+
+## Architecture
+
+See [CLAUDE.md](CLAUDE.md) for detailed architecture documentation, build
+commands, and implementation notes.
+
+## Requirements
+
+Create a proof-of-concept iOS app that
 
 1. loads a fixed URL for an Instagram post using the iOS WebView
 2. extracts the text from the post
@@ -20,7 +70,7 @@ Start by implementing a version we can run with Simulator, followed by
 dev tools to help run on a USB-connected device, and finally by dev tools
 that deploy this to TestFlight.
 
-## Tech stack
+### Tech stack
 
 - OCR: use Apple Vision framework (https://developer.apple.com/documentation/vision/recognizing-text-in-images)
 - UI: SwiftUI
@@ -31,9 +81,9 @@ that deploy this to TestFlight.
 - Concurrency: Structured concurrency (async / await, actors)
 - Min Target: iOS 17
 
-## How to work in this project
+### How to work in this project
 
-This is a proof-of-concept - no need for tests, CI/CD, or a deploy pipeline.
+This is a proof-of-concept - no need for CI/CD or a deploy pipeline.
 
 However, we do want good local dev tooling (build scripts, linting, etc).
 

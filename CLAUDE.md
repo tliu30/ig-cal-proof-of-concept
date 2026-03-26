@@ -38,6 +38,10 @@ Each subdirectory should include a README explaining the purpose and architectur
 
 ## Build & Run Commands
 
+> **Tip:** Most commands below are wrapped in the project `Makefile`. Run `make help`
+> to see all available targets, or `make preflight` to format, lint, build, and test
+> in one step.
+
 ### Prerequisites
 
 - Xcode 15+ (for iOS 17 SDK)
@@ -137,5 +141,5 @@ Configure via `.swiftlint.yml` and `.swiftformat` in project root.
 
 - All modules should include extensive documentation explaining how they work to an audience unfamiliar with Swift.
 - Subdirectory READMEs should explain both purpose and architectural role.
-- This is a proof-of-concept: no tests, CI/CD, or deploy pipeline needed.
+- This is a proof-of-concept: no CI/CD or deploy pipeline needed.
 - Focus on clear, well-documented code over production hardening.
