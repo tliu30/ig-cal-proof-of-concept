@@ -37,7 +37,15 @@
 		A100000025 /* EventExtractionTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000026 /* EventExtractionTab.swift */; };
 		A100000026 /* LlamaSystemPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000027 /* LlamaSystemPrompt.swift */; };
 		A100000027 /* LlamaExtractionTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000028 /* LlamaExtractionTab.swift */; };
+		A100000028 /* URLValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000029 /* URLValidator.swift */; };
+		A100000029 /* URLInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000030 /* URLInputView.swift */; };
 		D0A1A0032F738000000AA003 /* LlamaSwift in Frameworks */ = {isa = PBXBuildFile; productRef = D0A1A0022F738000000AA002 /* LlamaSwift */; };
+		SI00000017 /* ShareInspector.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = SI00000005 /* ShareInspector.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		SI00000019 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = SI00000020 /* ShareViewController.swift */; };
+		SI00000021 /* ShareInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SI00000022 /* ShareInspectorView.swift */; };
+		SI00000024 /* SharedConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = SI00000025 /* SharedConstants.swift */; };
+		SI00000026 /* SharedConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = SI00000025 /* SharedConstants.swift */; };
+		SI00000027 /* URLValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000029 /* URLValidator.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -47,6 +55,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = F100000001;
 			remoteInfo = MyFirstiOSApp;
+		};
+		SI00000011 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F100000005 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = SI00000010;
+			remoteInfo = ShareInspector;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -81,7 +96,14 @@
 		B100000026 /* EventExtractionTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventExtractionTab.swift; sourceTree = "<group>"; };
 		B100000027 /* LlamaSystemPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LlamaSystemPrompt.swift; sourceTree = "<group>"; };
 		B100000028 /* LlamaExtractionTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LlamaExtractionTab.swift; sourceTree = "<group>"; };
+		B100000029 /* URLValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLValidator.swift; sourceTree = "<group>"; };
+		B100000030 /* URLInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLInputView.swift; sourceTree = "<group>"; };
 		C100000001 /* MyFirstiOSApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MyFirstiOSApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		SI00000005 /* ShareInspector.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShareInspector.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		SI00000020 /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
+		SI00000022 /* ShareInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareInspectorView.swift; sourceTree = "<group>"; };
+		SI00000023 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		SI00000025 /* SharedConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedConstants.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -106,7 +128,28 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		SI00000008 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		SI00000016 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				SI00000017 /* ShareInspector.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXGroup section */
 		40297B1D2F736A12004C8C60 /* Frameworks */ = {
@@ -133,6 +176,7 @@
 				40297B212F736A3B004C8C60 /* test-data */,
 				E100000002 /* MyFirstiOSApp */,
 				40297B152F7368B8004C8C60 /* MyFirstiOSAppTests */,
+				SI00000006 /* ShareInspector */,
 				40297B1D2F736A12004C8C60 /* Frameworks */,
 				E100000010 /* Products */,
 			);
@@ -178,6 +222,7 @@
 				B100000002 /* ContentView.swift */,
 				B100000005 /* LoadingView.swift */,
 				B100000006 /* ResultsView.swift */,
+				B100000030 /* URLInputView.swift */,
 				E100000006 /* Components */,
 			);
 			path = Views;
@@ -221,6 +266,7 @@
 			isa = PBXGroup;
 			children = (
 				B100000011 /* Constants.swift */,
+				B100000029 /* URLValidator.swift */,
 			);
 			path = Utilities;
 			sourceTree = "<group>";
@@ -239,8 +285,20 @@
 			children = (
 				C100000001 /* MyFirstiOSApp.app */,
 				40297B142F7368B8004C8C60 /* MyFirstiOSAppTests.xctest */,
+				SI00000005 /* ShareInspector.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		SI00000006 /* ShareInspector */ = {
+			isa = PBXGroup;
+			children = (
+				SI00000020 /* ShareViewController.swift */,
+				SI00000022 /* ShareInspectorView.swift */,
+				SI00000025 /* SharedConstants.swift */,
+				SI00000023 /* Info.plist */,
+			);
+			path = ShareInspector;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -278,10 +336,12 @@
 				D100000001 /* Frameworks */,
 				F100000003 /* Resources */,
 				C200000001 /* Copy LLM Model + Cache */,
+				SI00000016 /* Embed App Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				SI00000012 /* PBXTargetDependency */,
 			);
 			name = MyFirstiOSApp;
 			packageProductDependencies = (
@@ -291,6 +351,23 @@
 			productName = MyFirstiOSApp;
 			productReference = C100000001 /* MyFirstiOSApp.app */;
 			productType = "com.apple.product-type.application";
+		};
+		SI00000010 /* ShareInspector */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = SI00000015 /* Build configuration list for PBXNativeTarget "ShareInspector" */;
+			buildPhases = (
+				SI00000007 /* Sources */,
+				SI00000008 /* Frameworks */,
+				SI00000009 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ShareInspector;
+			productName = ShareInspector;
+			productReference = SI00000005 /* ShareInspector.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -308,6 +385,9 @@
 					};
 					F100000001 = {
 						CreatedOnToolsVersion = 15.0;
+					};
+					SI00000010 = {
+						CreatedOnToolsVersion = 26.3;
 					};
 				};
 			};
@@ -330,6 +410,7 @@
 			targets = (
 				F100000001 /* MyFirstiOSApp */,
 				40297B132F7368B8004C8C60 /* MyFirstiOSAppTests */,
+				SI00000010 /* ShareInspector */,
 			);
 		};
 /* End PBXProject section */
@@ -351,6 +432,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				A100000012 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		SI00000009 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -413,6 +501,20 @@
 				A100000025 /* EventExtractionTab.swift in Sources */,
 				A100000026 /* LlamaSystemPrompt.swift in Sources */,
 				A100000027 /* LlamaExtractionTab.swift in Sources */,
+				A100000028 /* URLValidator.swift in Sources */,
+				A100000029 /* URLInputView.swift in Sources */,
+				SI00000026 /* SharedConstants.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		SI00000007 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				SI00000019 /* ShareViewController.swift in Sources */,
+				SI00000021 /* ShareInspectorView.swift in Sources */,
+				SI00000024 /* SharedConstants.swift in Sources */,
+				SI00000027 /* URLValidator.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -423,6 +525,11 @@
 			isa = PBXTargetDependency;
 			target = F100000001 /* MyFirstiOSApp */;
 			targetProxy = 40297B182F7368B8004C8C60 /* PBXContainerItemProxy */;
+		};
+		SI00000012 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = SI00000010 /* ShareInspector */;
+			targetProxy = SI00000011 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -595,6 +702,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = MyFirstiOSApp/MyFirstiOSApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
@@ -626,6 +734,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = MyFirstiOSApp/MyFirstiOSApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
@@ -646,6 +755,60 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.MyFirstiOSAppH174tgj;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		SI00000013 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = ShareInspector/ShareInspector.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 8J7GKV67HD;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ShareInspector/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = ShareInspector;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.MyFirstiOSAppH174tgj.ShareInspector;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		SI00000014 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = ShareInspector/ShareInspector.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 8J7GKV67HD;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ShareInspector/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = ShareInspector;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.MyFirstiOSAppH174tgj.ShareInspector;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -678,6 +841,15 @@
 			buildConfigurations = (
 				G100000001 /* Debug */,
 				G100000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		SI00000015 /* Build configuration list for PBXNativeTarget "ShareInspector" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				SI00000013 /* Debug */,
+				SI00000014 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

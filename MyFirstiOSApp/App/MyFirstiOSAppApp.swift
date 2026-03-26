@@ -18,11 +18,47 @@ import SwiftUI
 /// The `@main` attribute tells the Swift compiler this is the application entry point.
 /// At launch, the system creates an instance of this struct, evaluates its `body`,
 /// and displays the resulting view hierarchy on screen.
+///
+/// ## URL Scheme Handling
+/// The app registers a custom URL scheme (`myfirstiosapp://`) so the ShareInspector
+/// extension can open the main app after writing a shared URL to App Groups UserDefaults.
+/// `.onOpenURL` fires when the app is opened via this scheme, and `scenePhase` changes
+/// to `.active` when the app returns to the foreground.
 @main
 struct MyFirstiOSAppApp: App {
+    /// Tracks the current scene phase (active, inactive, background).
+    @Environment(\.scenePhase) private var scenePhase
+
+    /// The pending URL received from the share extension, if any.
+    @State private var pendingURL: URL?
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ContentView(pendingURL: $pendingURL)
+                .onOpenURL { url in
+                    // Triggered when opened via myfirstiosapp://share URL scheme.
+                    // Read the actual Instagram URL from shared UserDefaults.
+                    checkForPendingURL()
+                }
+                .onChange(of: scenePhase) { _, newPhase in
+                    if newPhase == .active {
+                        checkForPendingURL()
+                    }
+                }
         }
+    }
+
+    /// Reads a pending Instagram URL from App Groups UserDefaults.
+    /// If found, sets `pendingURL` and clears the stored value.
+    private func checkForPendingURL() {
+        let sharedDefaults = UserDefaults(suiteName: SharedConstants.appGroupID)
+        guard let urlString = sharedDefaults?.string(forKey: SharedConstants.pendingURLKey),
+              let url = URL(string: urlString) else {
+            return
+        }
+        // Clear it so we don't re-process on next foreground.
+        sharedDefaults?.removeObject(forKey: SharedConstants.pendingURLKey)
+        sharedDefaults?.synchronize()
+        pendingURL = url
     }
 }

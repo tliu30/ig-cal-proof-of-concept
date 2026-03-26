@@ -12,8 +12,8 @@ import Foundation
 
 /// Namespace for app-wide constant values.
 enum AppConstants {
-    /// The fixed Instagram post URL that the app loads on launch.
-    /// Change this URL to point to any public Instagram post you want to analyze.
+    /// A default Instagram post URL, used for SwiftUI previews and tests.
+    /// The app now accepts user-provided URLs via `URLInputView`.
     static let instagramURL = URL(string: "https://www.instagram.com/p/DVb33j7lVEm/")!
 
     /// Mobile Safari user agent string.

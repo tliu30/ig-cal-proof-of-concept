@@ -31,6 +31,9 @@ struct ResultsView: View {
     /// Diagnostic info from the most recent Llama inference, if available.
     let llamaDiagnostics: LlamaDiagnostics?
 
+    /// Called when the user wants to analyze a different URL.
+    var onNewURL: (() -> Void)?
+
     /// Which tab is currently selected.
     @State private var selectedTab = 0
 
@@ -87,6 +90,17 @@ struct ResultsView: View {
             .indexViewStyle(.page(backgroundDisplayMode: .always))
             .navigationTitle(tabTitle)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                if let onNewURL {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            onNewURL()
+                        } label: {
+                            Label("New URL", systemImage: "arrow.counterclockwise")
+                        }
+                    }
+                }
+            }
         }
         .task {
             guard !hasParsed else { return }

@@ -20,79 +20,114 @@
 
 import SwiftUI
 
-/// The root view that switches between loading and results screens.
+/// The root view that switches between URL input, loading, and results screens.
+///
+/// ## Navigation Flow
+/// The app starts on `URLInputView` (when `viewModel` is nil). When the user submits
+/// a valid URL, a new `PostViewModel` is created and extraction begins. After viewing
+/// results, the user can tap "New URL" to return to the input screen, which sets
+/// `viewModel` back to nil and discards the old ViewModel.
 struct ContentView: View {
-    /// The ViewModel that manages all app state and business logic.
-    /// `@State` means this view owns the ViewModel — it's created once when the view
-    /// first appears and persists across re-renders.
-    @State private var viewModel = PostViewModel()
+    /// The ViewModel that manages extraction state and business logic.
+    /// `nil` means the app is in the URL input state — no extraction is in progress.
+    /// A new ViewModel is created each time the user submits a URL, ensuring a clean
+    /// state for each extraction run.
+    @State private var viewModel: PostViewModel?
+
+    /// A URL received from the share extension via App Groups.
+    /// When set, the app automatically starts extraction for this URL.
+    @Binding var pendingURL: URL?
 
     var body: some View {
-        ZStack {
-            if viewModel.isLoading {
-                // Show the live web view while loading so the user can see the
-                // page rendering. A status overlay sits on top.
-                if viewModel.needsWebView {
-                    InstagramWebView(url: viewModel.targetURL) { content in
-                        Task { @MainActor in
-                            await viewModel.handleExtractedContent(content)
+        Group {
+        if let viewModel {
+            ZStack {
+                if viewModel.isLoading {
+                    // Show the live web view while loading so the user can see the
+                    // page rendering. A status overlay sits on top.
+                    if viewModel.needsWebView {
+                        InstagramWebView(url: viewModel.targetURL) { content in
+                            Task { @MainActor in
+                                await viewModel.handleExtractedContent(content)
+                            }
                         }
-                    }
-                    .ignoresSafeArea()
+                        .ignoresSafeArea()
 
-                    // Semi-transparent status bar at the bottom
-                    VStack {
-                        Spacer()
-                        HStack(spacing: 10) {
-                            ProgressView()
-                            Text(viewModel.loadingPhase.rawValue)
-                                .font(.subheadline.bold())
+                        // Semi-transparent status bar at the bottom
+                        VStack {
+                            Spacer()
+                            HStack(spacing: 10) {
+                                ProgressView()
+                                Text(viewModel.loadingPhase.rawValue)
+                                    .font(.subheadline.bold())
+                            }
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(.ultraThinMaterial)
                         }
-                        .padding()
-                        .frame(maxWidth: .infinity)
-                        .background(.ultraThinMaterial)
+                    } else {
+                        // Post-webview processing (downloading images, running OCR)
+                        LoadingView(
+                            phase: viewModel.loadingPhase,
+                            progress: viewModel.progress
+                        )
                     }
-                } else {
-                    // Post-webview processing (downloading images, running OCR)
-                    LoadingView(
-                        phase: viewModel.loadingPhase,
-                        progress: viewModel.progress
+                } else if let post = viewModel.post {
+                    ResultsView(
+                        post: post,
+                        targetURL: viewModel.targetURL,
+                        extractionStates: viewModel.extractionStates,
+                        llamaDiagnostics: viewModel.llamaDiagnostics,
+                        onNewURL: { self.viewModel = nil }
                     )
-                }
-            } else if let post = viewModel.post {
-                ResultsView(
-                    post: post,
-                    targetURL: viewModel.targetURL,
-                    extractionStates: viewModel.extractionStates,
-                    llamaDiagnostics: viewModel.llamaDiagnostics
-                )
-            } else if let error = viewModel.errorMessage {
-                // Error state with retry button.
-                VStack(spacing: 16) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .font(.largeTitle)
-                        .foregroundStyle(.red)
-                    Text("Error")
-                        .font(.title2.bold())
-                    Text(error)
-                        .font(.body)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal)
-                    Button("Try Again") {
-                        viewModel.startExtraction()
+                } else if let error = viewModel.errorMessage {
+                    // Error state with retry and new URL buttons.
+                    VStack(spacing: 16) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.largeTitle)
+                            .foregroundStyle(.red)
+                        Text("Error")
+                            .font(.title2.bold())
+                        Text(error)
+                            .font(.body)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                        HStack(spacing: 12) {
+                            Button("Try Again") {
+                                viewModel.startExtraction()
+                            }
+                            .buttonStyle(.borderedProminent)
+                            Button("New URL") {
+                                self.viewModel = nil
+                            }
+                            .buttonStyle(.bordered)
+                        }
                     }
-                    .buttonStyle(.borderedProminent)
                 }
             }
+        } else {
+            URLInputView { url in
+                startExtraction(for: url)
+            }
         }
-        .onAppear {
-            // Start the extraction pipeline when the view first appears.
-            viewModel.startExtraction()
         }
+        .onChange(of: pendingURL) { _, newURL in
+            if let url = newURL {
+                startExtraction(for: url)
+            }
+        }
+    }
+
+    /// Creates a new ViewModel for the given URL and starts extraction.
+    private func startExtraction(for url: URL) {
+        let vm = PostViewModel(url: url)
+        self.viewModel = vm
+        self.pendingURL = nil
+        vm.startExtraction()
     }
 }
 
 #Preview {
-    ContentView()
+    ContentView(pendingURL: .constant(nil))
 }
