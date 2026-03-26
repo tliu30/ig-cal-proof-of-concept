@@ -57,6 +57,9 @@ playground.xcworkspace/
 # Compiled scripts
 scripts/extract_post
 
+# LLM model files
+models/
+
 # Misc
 *.hmap
 *.ipa

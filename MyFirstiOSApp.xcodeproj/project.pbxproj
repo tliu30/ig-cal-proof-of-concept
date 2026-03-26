@@ -28,6 +28,7 @@
 		A100000016 /* event-flyer-ocr.txt in Resources */ = {isa = PBXBuildFile; fileRef = B100000017 /* event-flyer-ocr.txt */; };
 		A100000017 /* event-single-ocr.txt in Resources */ = {isa = PBXBuildFile; fileRef = B100000018 /* event-single-ocr.txt */; };
 		A100000018 /* event-single-caption.txt in Resources */ = {isa = PBXBuildFile; fileRef = B100000019 /* event-single-caption.txt */; };
+		D0A1A0032F738000000AA003 /* LlamaSwift in Frameworks */ = {isa = PBXBuildFile; productRef = D0A1A0022F738000000AA002 /* LlamaSwift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -83,6 +84,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				40297B0F2F73688C004C8C60 /* SwiftSoup in Frameworks */,
+				D0A1A0032F738000000AA003 /* LlamaSwift in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -288,6 +290,7 @@
 			mainGroup = E100000001;
 			packageReferences = (
 				40297B0D2F73688B004C8C60 /* XCRemoteSwiftPackageReference "SwiftSoup" */,
+				D0A1A0012F738000000AA001 /* XCRemoteSwiftPackageReference "llama.swift" */,
 			);
 			productRefGroup = E100000010 /* Products */;
 			projectDirPath = "";
@@ -627,6 +630,14 @@
 				minimumVersion = 2.13.3;
 			};
 		};
+		D0A1A0012F738000000AA001 /* XCRemoteSwiftPackageReference "llama.swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/mattt/llama.swift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.8530.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -639,6 +650,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 40297B0D2F73688B004C8C60 /* XCRemoteSwiftPackageReference "SwiftSoup" */;
 			productName = SwiftSoup;
+		};
+		D0A1A0022F738000000AA002 /* LlamaSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D0A1A0012F738000000AA001 /* XCRemoteSwiftPackageReference "llama.swift" */;
+			productName = LlamaSwift;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
