@@ -127,4 +127,72 @@ enum HTMLParsingService {
             return text.count > 20 ? text : nil
         }
     }
+
+    // MARK: - Caption from Embedded JSON
+
+    /// Extracts the post caption from Instagram's embedded JSON data in the HTML.
+    ///
+    /// Instagram embeds structured post data as JSON within `<script>` tags. The
+    /// caption appears in objects like:
+    /// ```json
+    /// "caption":{"pk":"17863257045526291","text":"Full caption text here"}
+    /// ```
+    ///
+    /// This is more reliable than extracting from `<span>` elements (which can pick
+    /// up Instagram UI text) or from `og:description` (which may truncate long captions).
+    ///
+    /// - Parameter html: Raw HTML string (before preprocessing, which strips `<script>` tags).
+    /// - Returns: The decoded caption text, or `nil` if no caption JSON is found.
+    ///
+    /// ### How it works
+    /// 1. Finds the first `"caption":{` substring in the HTML via string search.
+    /// 2. Walks forward from the opening `{` to find the matching `}`, properly
+    ///    tracking JSON string context (so `}` inside a string value is not mistaken
+    ///    for the object close).
+    /// 3. Passes the extracted `{...}` fragment to `JSONSerialization`, which handles
+    ///    all JSON escape sequences (`\n`, `\u0040`, `\"`, etc.) automatically.
+    /// 4. Returns the value of the `"text"` key.
+    static func extractCaptionFromEmbeddedJSON(from html: String) -> String? {
+        // Step 1: Find "caption":{ via string search.
+        guard let prefixRange = html.range(of: #""caption":{"#) else {
+            return nil
+        }
+
+        // Step 2: Walk forward from { to find the matching }, tracking string context.
+        // The opening { is the last character of the matched prefix.
+        let openBrace = html.index(before: prefixRange.upperBound)
+        var depth = 1
+        var i = html.index(after: openBrace)
+        var inString = false
+        var escaped = false
+
+        while i < html.endIndex && depth > 0 {
+            let char = html[i]
+            if escaped {
+                escaped = false
+            } else if char == "\\" && inString {
+                escaped = true
+            } else if char == "\"" {
+                inString.toggle()
+            } else if !inString {
+                if char == "{" { depth += 1 }
+                if char == "}" { depth -= 1 }
+            }
+            if depth > 0 { i = html.index(after: i) }
+        }
+
+        guard depth == 0 else { return nil }
+
+        // Step 3: Parse the JSON object fragment with JSONSerialization.
+        let closeBrace = i
+        let jsonStr = String(html[openBrace...closeBrace])
+
+        guard let data = jsonStr.data(using: .utf8),
+              let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let text = obj["text"] as? String else {
+            return nil
+        }
+
+        return text
+    }
 }

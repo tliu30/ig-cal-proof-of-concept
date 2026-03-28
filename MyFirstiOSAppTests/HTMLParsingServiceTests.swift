@@ -192,6 +192,42 @@ struct CaptionExtractionTests {
     }
 }
 
+// MARK: - Caption from Embedded JSON Tests
+
+@Suite("Caption from Embedded JSON")
+struct CaptionFromEmbeddedJSONTests {
+
+    @Test("Extracts the main post caption from dump.html")
+    func extractsMainCaption() {
+        let caption = HTMLParsingService.extractCaptionFromEmbeddedJSON(from: testHTML)
+        #expect(caption != nil)
+        #expect(caption == "Got a full month of evening programming ahead. Which one will we see you at?")
+    }
+
+    @Test("Returns full untruncated text (not og:description which may be shortened)")
+    func returnsFullText() {
+        let caption = HTMLParsingService.extractCaptionFromEmbeddedJSON(from: testHTML)
+        // The full caption should NOT have the "39 likes, 1 comments - ..." prefix
+        #expect(caption?.contains("likes") == false)
+        #expect(caption?.contains("comments") == false)
+    }
+
+    @Test("Decodes JSON escape sequences")
+    func decodesJSONEscapes() {
+        let html = #"""
+        <script>"caption":{"pk":"123","text":"Line one\nLine two \u0040user #tag"}</script>
+        """#
+        let caption = HTMLParsingService.extractCaptionFromEmbeddedJSON(from: html)
+        #expect(caption == "Line one\nLine two @user #tag")
+    }
+
+    @Test("Returns nil when no caption JSON is present")
+    func returnsNilForNoCaption() {
+        let caption = HTMLParsingService.extractCaptionFromEmbeddedJSON(from: "<html><body>No JSON here</body></html>")
+        #expect(caption == nil)
+    }
+}
+
 // MARK: - Edge Case Tests
 
 @Suite("Edge Cases")

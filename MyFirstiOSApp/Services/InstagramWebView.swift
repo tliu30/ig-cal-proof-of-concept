@@ -41,6 +41,10 @@ struct ExtractedContent {
     let textContent: String
     /// Full-size image URLs found on the page.
     let imageURLs: [URL]
+    /// Alt text attributes for each image in ``imageURLs``, in the same order.
+    /// Extracted alongside image URLs using the same filter criteria (CDN, width,
+    /// no profile pictures), so alt texts are always aligned with their images.
+    let imageAlts: [String]
     /// The complete HTML source of the rendered page.
     let pageSource: String
 }
@@ -171,10 +175,12 @@ struct InstagramWebView: UIViewRepresentable {
                     textContent = '[No text content found on page]';
                 }
 
-                // --- Extract image URLs ---
+                // --- Extract image URLs and alt texts ---
                 // Instagram serves images at multiple resolutions via srcset.
                 // We want the largest version. srcset format: "url1 widthW, url2 widthW, ..."
+                // Alt texts are collected in parallel so they stay aligned with image URLs.
                 var imageURLs = [];
+                var imageAlts = [];
                 var imgs = document.querySelectorAll('article img, main img');
                 imgs.forEach(function(img) {
                     var url = '';
@@ -198,19 +204,24 @@ struct InstagramWebView: UIViewRepresentable {
                     }
 
                     // Filter: only include Instagram CDN images, skip UI icons/avatars
-                    // Instagram CDN images are served from scontent*.cdninstagram.com or
-                    // scontent*.xx.fbcdn.net. We also filter by natural size to skip tiny icons.
+                    // and profile pictures. Instagram CDN images are served from
+                    // scontent*.cdninstagram.com or scontent*.xx.fbcdn.net. We filter
+                    // by natural size to skip tiny icons and by alt text to skip
+                    // profile pictures.
                     if (url && (url.includes('cdninstagram') || url.includes('fbcdn'))
-                        && img.naturalWidth > 200) {
+                        && img.naturalWidth > 200
+                        && !(img.alt && img.alt.toLowerCase().includes('profile picture'))) {
                         if (imageURLs.indexOf(url) === -1) {
                             imageURLs.push(url);
+                            imageAlts.push(img.alt || '');
                         }
                     }
                 });
 
                 return JSON.stringify({
                     textContent: textContent,
-                    imageURLs: imageURLs
+                    imageURLs: imageURLs,
+                    imageAlts: imageAlts
                 });
             })();
             """
@@ -225,6 +236,7 @@ struct InstagramWebView: UIViewRepresentable {
                     onContentExtracted(ExtractedContent(
                         textContent: "[Failed to parse extraction results]",
                         imageURLs: [],
+                        imageAlts: [],
                         pageSource: ""
                     ))
                     return
@@ -232,9 +244,10 @@ struct InstagramWebView: UIViewRepresentable {
 
                 let textContent = json["textContent"] as? String ?? ""
                 let imageURLStrings = json["imageURLs"] as? [String] ?? []
+                let imageAlts = json["imageAlts"] as? [String] ?? []
 
                 let imageURLs = imageURLStrings.compactMap { URL(string: $0) }
-                logger.info("extractContent: main extraction OK — textContent=\(textContent.count) chars, imageURLs=\(imageURLs.count)")
+                logger.info("extractContent: main extraction OK — textContent=\(textContent.count) chars, imageURLs=\(imageURLs.count), imageAlts=\(imageAlts.count)")
 
                 // Extract page source in a separate call to avoid size limits.
                 // Instagram pages can produce multi-MB outerHTML that exceeds
@@ -277,6 +290,7 @@ struct InstagramWebView: UIViewRepresentable {
                 onContentExtracted(ExtractedContent(
                     textContent: textContent,
                     imageURLs: imageURLs,
+                    imageAlts: imageAlts,
                     pageSource: pageSource
                 ))
             } catch {
@@ -284,6 +298,7 @@ struct InstagramWebView: UIViewRepresentable {
                 onContentExtracted(ExtractedContent(
                     textContent: "[JavaScript extraction error: \(error.localizedDescription)]",
                     imageURLs: [],
+                    imageAlts: [],
                     pageSource: ""
                 ))
             }
@@ -297,6 +312,7 @@ struct InstagramWebView: UIViewRepresentable {
             onContentExtracted(ExtractedContent(
                 textContent: "[Page load failed: \(error.localizedDescription)]",
                 imageURLs: [],
+                imageAlts: [],
                 pageSource: ""
             ))
         }
@@ -309,6 +325,7 @@ struct InstagramWebView: UIViewRepresentable {
             onContentExtracted(ExtractedContent(
                 textContent: "[Page load failed: \(error.localizedDescription)]",
                 imageURLs: [],
+                imageAlts: [],
                 pageSource: ""
             ))
         }

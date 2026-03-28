@@ -142,7 +142,8 @@ class PostViewModel {
             await launchExtractions(
                 ocrResults: [:],
                 pageSource: content.pageSource,
-                textContent: content.textContent
+                textContent: content.textContent,
+                altTexts: content.imageAlts
             )
             return
         }
@@ -191,7 +192,8 @@ class PostViewModel {
         await launchExtractions(
             ocrResults: ocrResults,
             pageSource: content.pageSource,
-            textContent: content.textContent
+            textContent: content.textContent,
+            altTexts: content.imageAlts
         )
     }
 
@@ -205,22 +207,24 @@ class PostViewModel {
     private func launchExtractions(
         ocrResults: [URL: OCRResult],
         pageSource: String,
-        textContent: String
+        textContent: String,
+        altTexts: [String]
     ) async {
         // Initialize all states to running.
         for method in ExtractionMethod.allCases {
             extractionStates[method] = .running
         }
 
-        // Parse HTML on a background thread to get alt texts and captions.
-        let (altTexts, captions) = await Task.detached {
-            let alts = (try? HTMLParsingService.extractImageAltTexts(from: pageSource)) ?? []
-            let caps = (try? HTMLParsingService.extractCaptions(from: pageSource)) ?? []
-            return (alts, caps)
+        // Extract the post caption from Instagram's embedded JSON data.
+        // This is more reliable than span-based extraction (which picks up UI text
+        // like "Never miss a post...") and og:description (which may truncate).
+        // Falls back to the JS-extracted textContent if no JSON caption is found.
+        let jsonCaption = await Task.detached {
+            HTMLParsingService.extractCaptionFromEmbeddedJSON(from: pageSource)
         }.value
 
         let ocrTexts = ocrResults.values.map { $0.recognizedText }
-        let caption = captions.first ?? textContent
+        let caption = jsonCaption ?? textContent
         let currentDate = Date()
 
         let inputs = ExtractionInputs(
