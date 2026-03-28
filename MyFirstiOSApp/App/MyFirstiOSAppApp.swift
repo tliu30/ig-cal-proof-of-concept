@@ -32,9 +32,13 @@ struct MyFirstiOSAppApp: App {
     /// The pending URL received from the share extension, if any.
     @State private var pendingURL: URL?
 
+    /// Shared store for user-corrected training examples, persisted as JSON on disk.
+    @State private var trainingDataStore = TrainingDataStore()
+
     var body: some Scene {
         WindowGroup {
             ContentView(pendingURL: $pendingURL)
+                .environment(trainingDataStore)
                 .onOpenURL { url in
                     // Triggered when opened via myfirstiosapp://share URL scheme.
                     // Read the actual Instagram URL from shared UserDefaults.

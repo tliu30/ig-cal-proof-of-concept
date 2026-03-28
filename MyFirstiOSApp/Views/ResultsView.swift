@@ -14,10 +14,11 @@
 
 import SwiftUI
 
-/// Shows the extraction results in six tabs:
+/// Shows the extraction results in seven tabs:
 /// 1. Post content with OCR results
 /// 2. HTML parsing output (preprocessed HTML, captions, image URLs, alt texts)
 /// 3–6. Event extraction results from each method (Regex, NSDataDetector, Foundation Models, Llama)
+/// 7. Training data editor for creating corrected ground-truth examples
 struct ResultsView: View {
     /// The fully-processed post data.
     let post: Post
@@ -53,6 +54,7 @@ struct ResultsView: View {
         case 3: return ExtractionMethod.nsDataDetector.tabLabel
         case 4: return ExtractionMethod.foundationModels.tabLabel
         case 5: return ExtractionMethod.llama.tabLabel
+        case 6: return "Training Data"
         default: return "Results"
         }
     }
@@ -85,6 +87,11 @@ struct ResultsView: View {
                     state: extractionStates[.llama] ?? .idle,
                     diagnostics: llamaDiagnostics
                 ).tag(5)
+
+                TrainingDataTab(
+                    targetURL: targetURL,
+                    extractionStates: extractionStates
+                ).tag(6)
             }
             .tabViewStyle(.page(indexDisplayMode: .always))
             .indexViewStyle(.page(backgroundDisplayMode: .always))
