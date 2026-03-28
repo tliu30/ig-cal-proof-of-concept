@@ -62,9 +62,14 @@ There should be two views: the user should first see a loading screen as
 the app runs steps (1)-(3) and then a results screen, with a link to the
 fixed URL so the user can cross-compare.
 
-On the results screen, we should have a second tab the user can swipe to
-to see the source code of the page opened up in step (1), for further
-debugging.
+The results screen uses a swipeable tab view with seven pages:
+1. **Results** — post text, images with OCR results, link to original post
+2. **Extraction Inputs** — the exact data (caption, OCR texts, alt texts, current date) fed to the extraction algorithms
+3. **Regex** — events extracted via regex heuristics
+4. **NSDataDetector** — events extracted via Apple's NSDataDetector
+5. **Foundation Models** — events extracted via on-device Foundation Models (iOS 26+)
+6. **Llama LLM** — events extracted via local Llama model, with inference diagnostics
+7. **Training Data** — editor for creating corrected ground-truth examples
 
 Start by implementing a version we can run with Simulator, followed by
 dev tools to help run on a USB-connected device, and finally by dev tools

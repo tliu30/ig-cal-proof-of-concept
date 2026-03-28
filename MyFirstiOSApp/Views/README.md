@@ -27,9 +27,14 @@ A full-screen loading indicator showing:
 - The current processing phase as text (e.g., "Downloading images...")
 
 ### `ResultsView.swift`
-A two-page swipeable view (`TabView` with page style):
-- **Page 1 — Results**: Post text, images with OCR results, link to original post.
-- **Page 2 — Source**: Raw HTML of the loaded page for debugging.
+A seven-tab swipeable view (`TabView` with page style):
+1. **Results** — Post text, images with OCR results, link to original post.
+2. **Extraction Inputs** — The exact data (caption, OCR texts, alt texts, current date) passed to the extraction algorithms.
+3. **Regex** — Events extracted via regex heuristics.
+4. **NSDataDetector** — Events extracted via Apple's NSDataDetector.
+5. **Foundation Models** — Events extracted via on-device Foundation Models (iOS 26+).
+6. **Llama LLM** — Events extracted via local Llama model, with inference diagnostics.
+7. **Training Data** — Editor for creating corrected ground-truth examples.
 
 ### `Components/ImageOCRCard.swift`
 A reusable card that displays one image and its OCR output. Shows:

@@ -78,6 +78,7 @@ struct ContentView: View {
                         targetURL: viewModel.targetURL,
                         extractionStates: viewModel.extractionStates,
                         llamaDiagnostics: viewModel.llamaDiagnostics,
+                        extractionInputs: viewModel.extractionInputs,
                         onNewURL: { self.viewModel = nil }
                     )
                 } else if let error = viewModel.errorMessage {

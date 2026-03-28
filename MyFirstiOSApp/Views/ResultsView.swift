@@ -16,7 +16,7 @@ import SwiftUI
 
 /// Shows the extraction results in seven tabs:
 /// 1. Post content with OCR results
-/// 2. HTML parsing output (preprocessed HTML, captions, image URLs, alt texts)
+/// 2. Extraction inputs (caption, OCR texts, alt texts, current date)
 /// 3–6. Event extraction results from each method (Regex, NSDataDetector, Foundation Models, Llama)
 /// 7. Training data editor for creating corrected ground-truth examples
 struct ResultsView: View {
@@ -32,24 +32,20 @@ struct ResultsView: View {
     /// Diagnostic info from the most recent Llama inference, if available.
     let llamaDiagnostics: LlamaDiagnostics?
 
+    /// The exact inputs passed to all extraction algorithms, for diagnostic display.
+    let extractionInputs: ExtractionInputs?
+
     /// Called when the user wants to analyze a different URL.
     var onNewURL: (() -> Void)?
 
     /// Which tab is currently selected.
     @State private var selectedTab = 0
 
-    /// Parsed results from HTMLParsingService, computed asynchronously from pageSource.
-    @State private var parsedCaptions: [String] = []
-    @State private var parsedImageURLs: [String] = []
-    @State private var parsedAltTexts: [String] = []
-    @State private var preprocessedHTML: String = ""
-    @State private var hasParsed = false
-
     /// Navigation title based on the selected tab.
     private var tabTitle: String {
         switch selectedTab {
         case 0: return "Results"
-        case 1: return "Parsed HTML"
+        case 1: return "Extraction Inputs"
         case 2: return ExtractionMethod.regex.tabLabel
         case 3: return ExtractionMethod.nsDataDetector.tabLabel
         case 4: return ExtractionMethod.foundationModels.tabLabel
@@ -65,7 +61,7 @@ struct ResultsView: View {
                 resultsTab
                     .tag(0)
 
-                parsedHTMLTab
+                extractionInputsTab
                     .tag(1)
 
                 EventExtractionTab(
@@ -108,10 +104,6 @@ struct ResultsView: View {
                     }
                 }
             }
-        }
-        .task {
-            guard !hasParsed else { return }
-            await parsePageSource()
         }
     }
 
@@ -182,72 +174,60 @@ struct ResultsView: View {
         }
     }
 
-    // MARK: - Tab 2: Parsed HTML output
+    // MARK: - Tab 2: Extraction Inputs
 
-    private var parsedHTMLTab: some View {
+    private var extractionInputsTab: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                if !hasParsed {
-                    ProgressView("Parsing HTML...")
-                        .frame(maxWidth: .infinity, minHeight: 200)
-                } else {
-                    // --- Captions ---
-                    parsedSection(
-                        title: "Captions",
-                        icon: "text.bubble",
-                        items: parsedCaptions,
-                        emptyMessage: "No captions found"
-                    )
+                if let inputs = extractionInputs {
+                    // --- Caption ---
+                    VStack(alignment: .leading, spacing: 8) {
+                        Label("Caption", systemImage: "text.bubble")
+                            .font(.headline)
+                        Text(inputs.caption)
+                            .font(.body)
+                            .textSelection(.enabled)
+                            .padding(8)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color(.secondarySystemBackground))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                    }
+                    .padding(.horizontal)
 
                     Divider().padding(.horizontal)
 
-                    // --- Image URLs ---
+                    // --- OCR Texts ---
                     parsedSection(
-                        title: "Image URLs",
-                        icon: "photo",
-                        items: parsedImageURLs,
-                        emptyMessage: "No image URLs found"
+                        title: "OCR Texts",
+                        icon: "eye.circle",
+                        items: inputs.ocrTexts,
+                        emptyMessage: "No OCR text available"
                     )
 
                     Divider().padding(.horizontal)
 
                     // --- Alt Texts ---
                     parsedSection(
-                        title: "Image Alt Text",
+                        title: "Alt Texts",
                         icon: "text.below.photo",
-                        items: parsedAltTexts.enumerated().map { i, alt in
-                            alt.isEmpty ? "[\(i + 1)] (empty)" : "[\(i + 1)] \(alt)"
-                        },
-                        emptyMessage: "No alt text found"
+                        items: inputs.altTexts,
+                        emptyMessage: "No alt text available"
                     )
 
                     Divider().padding(.horizontal)
 
-                    // --- Preprocessed HTML size ---
+                    // --- Current Date ---
                     VStack(alignment: .leading, spacing: 8) {
-                        Label("Preprocessed HTML", systemImage: "doc.text")
+                        Label("Current Date", systemImage: "calendar")
                             .font(.headline)
-
-                        let origKB = post.pageSource.utf8.count / 1024
-                        let cleanKB = preprocessedHTML.utf8.count / 1024
-                        Text("Original: \(origKB) KB  |  Cleaned: \(cleanKB) KB")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-
-                        Text(String(preprocessedHTML.prefix(2000)))
-                            .font(.caption.monospaced())
+                        Text(inputs.currentDate.formatted(date: .long, time: .standard))
+                            .font(.body)
                             .textSelection(.enabled)
-                            .padding(8)
-                            .background(Color(.secondarySystemBackground))
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-
-                        if preprocessedHTML.count > 2000 {
-                            Text("(\(preprocessedHTML.count - 2000) more characters...)")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
                     }
                     .padding(.horizontal)
+                } else {
+                    ProgressView("Waiting for extraction...")
+                        .frame(maxWidth: .infinity, minHeight: 200)
                 }
             }
             .padding(.top)
@@ -286,27 +266,4 @@ struct ResultsView: View {
         .padding(.horizontal)
     }
 
-    /// Runs HTMLParsingService on the page source off the main thread.
-    private func parsePageSource() async {
-        let source = post.pageSource
-        let results: (String, [String], [String], [String])? = await Task.detached {
-            do {
-                let cleaned = try HTMLParsingService.preprocessHTML(source)
-                let urls = try HTMLParsingService.extractImageURLs(from: source)
-                let alts = try HTMLParsingService.extractImageAltTexts(from: source)
-                let caps = try HTMLParsingService.extractCaptions(from: source)
-                return (cleaned, urls, alts, caps)
-            } catch {
-                return nil
-            }
-        }.value
-
-        if let (cleaned, urls, alts, caps) = results {
-            preprocessedHTML = cleaned
-            parsedImageURLs = urls
-            parsedAltTexts = alts
-            parsedCaptions = caps
-        }
-        hasParsed = true
-    }
 }

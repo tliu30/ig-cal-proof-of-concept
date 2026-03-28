@@ -82,6 +82,9 @@ class PostViewModel {
     /// Diagnostic info from the most recent Llama inference, if available.
     var llamaDiagnostics: LlamaDiagnostics?
 
+    /// The inputs passed to all extraction algorithms, for diagnostic display.
+    var extractionInputs: ExtractionInputs?
+
     // MARK: - Private State
 
     /// The OCR service (an actor) that handles text recognition.
@@ -227,6 +230,7 @@ class PostViewModel {
             currentDate: currentDate
         )
 
+        self.extractionInputs = inputs
         await runAllExtractions(inputs: inputs)
     }
 
