@@ -18,8 +18,14 @@ import UIKit
 
 /// A form for entering an Instagram post URL.
 struct URLInputView: View {
+    /// Whether the Llama model uses GPU (Metal) for inference.
+    @Binding var useGPU: Bool
+
     /// Called when the user submits a valid URL.
     let onSubmit: (URL) -> Void
+
+    /// Called when the GPU toggle is flipped. Performs the model reload asynchronously.
+    var onToggleGPU: (() async -> Void)?
 
     /// The raw text the user has typed or pasted.
     @State private var urlText = ""
@@ -27,8 +33,20 @@ struct URLInputView: View {
     /// Validation error message, shown below the text field when non-nil.
     @State private var errorMessage: String?
 
+    /// Whether the model is currently reloading after a GPU toggle.
+    @State private var isReloading = false
+
+    /// Whether the reload just finished (shows success state in modal).
+    @State private var reloadComplete = false
+
     /// Tracks whether the text field is focused.
     @FocusState private var isTextFieldFocused: Bool
+
+    #if targetEnvironment(simulator)
+    private let isSimulator = true
+    #else
+    private let isSimulator = false
+    #endif
 
     var body: some View {
         NavigationStack {
@@ -99,6 +117,39 @@ struct URLInputView: View {
                 .padding(.horizontal)
                 .disabled(urlText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
+                // GPU acceleration toggle
+                VStack(spacing: 4) {
+                    HStack {
+                        Label("GPU Acceleration", systemImage: "bolt.fill")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Toggle("", isOn: $useGPU)
+                            .labelsHidden()
+                            .disabled(isReloading || isSimulator)
+                    }
+                    if isSimulator {
+                        Text("GPU not available in Simulator")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+                .padding(.horizontal)
+                .onChange(of: useGPU) {
+                    Task {
+                        isReloading = true
+                        reloadComplete = false
+                        await onToggleGPU?()
+                        reloadComplete = true
+                    }
+                }
+                .sheet(isPresented: $isReloading) {
+                    gpuReloadModal
+                        .presentationDetents([.medium])
+                        .interactiveDismissDisabled(!reloadComplete)
+                }
+
                 Spacer()
                 Spacer()
             }
@@ -118,10 +169,48 @@ struct URLInputView: View {
             errorMessage = error.errorDescription
         }
     }
+
+    /// Modal shown while the model is reloading after a GPU toggle.
+    private var gpuReloadModal: some View {
+        VStack(spacing: 20) {
+            Spacer()
+
+            if reloadComplete {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 48))
+                    .foregroundStyle(.green)
+                Text("Model loaded")
+                    .font(.title3.bold())
+                Text(useGPU ? "GPU acceleration enabled" : "Running on CPU")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            } else {
+                ProgressView()
+                    .controlSize(.large)
+                Text("Reloading model...")
+                    .font(.title3.bold())
+                Text(useGPU ? "Enabling GPU acceleration" : "Switching to CPU")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            if reloadComplete {
+                Button("Done") {
+                    isReloading = false
+                    reloadComplete = false
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+            }
+        }
+        .padding()
+    }
 }
 
 #Preview {
-    URLInputView { url in
+    URLInputView(useGPU: .constant(false)) { url in
         print("Submitted: \(url)")
     }
 }

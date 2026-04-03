@@ -27,6 +27,24 @@ enum LlamaExtractionService {
         FileManager.default.fileExists(atPath: LlamaModelManager.modelFilePath)
     }
 
+    /// Whether the model is currently using GPU (Metal) layers for inference.
+    static var isUsingGPU: Bool {
+        LlamaModelManager.shared.nGpuLayers > 0
+    }
+
+    /// Reloads the model with GPU enabled (all layers on Metal) or disabled (CPU-only).
+    /// This blocks for several seconds while the model reloads — call from a background thread.
+    static func setGPUEnabled(_ enabled: Bool) {
+        let layers: Int32 = enabled ? 99 : 0
+        let manager = LlamaModelManager.shared
+        if manager.isReady {
+            manager.reload(gpuLayers: layers)
+        } else {
+            manager.nGpuLayers = layers
+            manager.loadIfNeeded()
+        }
+    }
+
     /// Extracts structured events from unstructured text sources.
     ///
     /// - Parameters:
@@ -190,13 +208,17 @@ private final class LlamaModelManager {
     private(set) var isReady = false
 
     /// Number of GPU layers offloaded (0 = CPU-only).
-    private var nGpuLayers: Int32 = 0
+    fileprivate var nGpuLayers: Int32 = 0
 
     /// Number of tokens in the cached system prompt prefix.
     /// Loaded from a session file on disk (or computed once and saved).
     private var cachedSystemTokenCount: Int32 = 0
 
-    private init() {}
+    private init() {
+        if UserDefaults.standard.bool(forKey: "llamaUseGPU") {
+            nGpuLayers = 99
+        }
+    }
 
     deinit {
         if let sampler { llama_sampler_free(sampler) }
@@ -294,6 +316,24 @@ private final class LlamaModelManager {
 
         isReady = true
         print("[LlamaModelManager] Model loaded successfully")
+    }
+
+    /// Tears down all llama.cpp state and reloads the model with a new GPU layer count.
+    /// Frees resources in reverse order of creation, then rebuilds via `loadIfNeeded()`.
+    func reload(gpuLayers: Int32) {
+        if let sampler { llama_sampler_free(sampler) }
+        sampler = nil
+        if let ctx { llama_free(ctx) }
+        ctx = nil
+        if let model { llama_model_free(model) }
+        model = nil
+        llama_backend_free()
+
+        isReady = false
+        cachedSystemTokenCount = 0
+        nGpuLayers = gpuLayers
+
+        loadIfNeeded()
     }
 
     /// Loads the pre-computed system prompt KV cache from disk, or creates it on first run.

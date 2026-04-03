@@ -38,6 +38,10 @@ struct ContentView: View {
     /// When set, the app automatically starts extraction for this URL.
     @Binding var pendingURL: URL?
 
+    /// Whether the Llama model should use GPU (Metal) for inference.
+    /// Lives here (not in PostViewModel) because it outlives any single extraction run.
+    @State private var llamaUseGPU = UserDefaults.standard.bool(forKey: "llamaUseGPU")
+
     var body: some View {
         Group {
         if let viewModel {
@@ -108,8 +112,14 @@ struct ContentView: View {
                 }
             }
         } else {
-            URLInputView { url in
+            URLInputView(useGPU: $llamaUseGPU) { url in
                 startExtraction(for: url)
+            } onToggleGPU: {
+                let enabled = llamaUseGPU
+                UserDefaults.standard.set(enabled, forKey: "llamaUseGPU")
+                await Task.detached {
+                    LlamaExtractionService.setGPUEnabled(enabled)
+                }.value
             }
         }
         }
